@@ -1,0 +1,69 @@
+# version: '3.8'
+
+# services:
+#   app:
+#     build: .
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/tennis_book?createDatabaseIfNotExist=true
+#       - SPRING_DATASOURCE_USERNAME=root
+#       - SPRING_DATASOURCE_PASSWORD=root
+#       - APP_JWT_SECRET=your-secret-key-should-be-very-long-and-secure-in-production
+#       - APP_JWT_EXPIRATION=86400000
+#     depends_on:
+#       - db
+#     networks:
+#       - tennis-network
+
+#   db:
+#     image: mysql:8.0
+#     ports:
+#       - "3306:3306"
+#     environment:
+#       - MYSQL_ROOT_PASSWORD=root
+#       - MYSQL_DATABASE=tennis_book
+#     volumes:
+#       - mysql-data:/var/lib/mysql
+#     networks:
+#       - tennis-network
+
+# networks:
+#   tennis-network:
+#     driver: bridge
+
+# volumes:
+#   mysql-data: 
+
+# render.yaml
+services:
+  # --- Spring Boot API ------------------------------------------------
+  - type: web
+    name: tennis-api
+    env: docker
+    plan: free            # free = 512 MB; upgrade if you outgrow it
+    dockerContext: .
+
+    envVars:
+      # Render injects DB_* automatically once we link the MySQL service (next block)
+      - key: APP_JWT_SECRET
+        value: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - key: APP_JWT_EXPIRATION
+        value: "86400000"
+
+  # --- MySQL ----------------------------------------------------------
+  - type: private         # private = internal network only
+    name: mysql
+    env: docker
+    plan: starter         # free tier not allowed for private services
+    dockerContext: ./mysql        # or leave “.” if your Dockerfile lives at repo root
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1           # keep it tiny for a portfolio
+
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        value: root
+      - key: MYSQL_DATABASE
+        value: tennis_book
