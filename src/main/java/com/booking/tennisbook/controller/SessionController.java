@@ -1,11 +1,19 @@
 package com.booking.tennisbook.controller;
 
+import com.booking.tennisbook.dto.session.SessionAvailibilityRequest;
+import com.booking.tennisbook.dto.session.SessionAvailibilityResponse;
 import com.booking.tennisbook.dto.session.SessionDto;
+import com.booking.tennisbook.exception.BusinessException;
+import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.repository.SessionRepository;
+import com.booking.tennisbook.service.SessionService;
+import com.booking.tennisbook.service.impl.SessionServiceImpl;
+import jakarta.persistence.Access;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,13 +21,21 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 @RestController
 @RequestMapping("/api/sessions")
-@RequiredArgsConstructor
 public class SessionController {
 
     private static final Logger logger = LoggerFactory.getLogger(SessionController.class);
+
     private final SessionRepository sessionRepository;
+    private final SessionService sessionService;
+
+    public SessionController(SessionRepository sessionRepository, SessionService sessionService) {
+        this.sessionRepository = sessionRepository;
+        this.sessionService = sessionService;
+    }
 
     @GetMapping
     public ResponseEntity<List<SessionDto>> getAllSessions() {
@@ -65,6 +81,26 @@ public class SessionController {
                     logger.warn("Session not found with id: {}", id);
                     return ResponseEntity.notFound().build();
                 });
+    }
+
+    @PostMapping("/availability")
+    public ResponseEntity<SessionAvailibilityResponse> getSessionAvailability(@RequestBody SessionAvailibilityRequest request) {
+
+        if (isEmpty(request)) {
+            logger.warn("No sessions found for the provided ids: {}", request.getSessionId());
+            return ResponseEntity.notFound().build();
+        }
+
+        logger.info("Checking availability for sessions with ids: {}", request.getSessionId());
+        SessionAvailibilityResponse session = sessionService.checkSessionAvailability(request);
+
+        if(isEmpty(session)){
+            logger.error("No availability found for session with id: {}", request.getSessionId());
+            throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
+        }
+
+        logger.info("Successfully retrieved availability for {} sessions", session.getSessionId());
+        return ResponseEntity.ok(session);
     }
 
     @PostMapping

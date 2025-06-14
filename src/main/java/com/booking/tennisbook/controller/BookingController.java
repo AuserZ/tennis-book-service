@@ -11,6 +11,8 @@ import com.booking.tennisbook.model.User;
 import com.booking.tennisbook.repository.BookingRepository;
 import com.booking.tennisbook.repository.SessionRepository;
 import com.booking.tennisbook.repository.UserRepository;
+import com.booking.tennisbook.service.BookingService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -32,52 +34,20 @@ public class BookingController {
     private final BookingRepository bookingRepository;
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final BookingService bookingService;
 
     @PostMapping("/newBookSession")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingRequest bookingRequest) {
-        logger.info("Received booking request for session ID: {} with {} participants", 
-            bookingRequest.getSessionId(), bookingRequest.getParticipants());
-        
+        logger.info("Received booking request for session ID: {} with {} participants",
+                bookingRequest.getSessionId(), bookingRequest.getParticipants());
+
         try {
-            String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> {
-                    logger.error("User not found with email: {}", userEmail);
-                    return new BusinessException(ErrorCode.NOT_FOUND);
-                });
+            Booking resultNewBooking = bookingService.createBooking(bookingRequest);
 
-            Session session = sessionRepository.findById(bookingRequest.getSessionId())
-                .orElseThrow(() -> {
-                    logger.error("Session not found with ID: {}", bookingRequest.getSessionId());
-                    return new BusinessException(ErrorCode.SESSION_NOT_FOUND);
-                });
+            logger.info("Successfully created booking with ID: {} for session ID: {}",
+                    resultNewBooking.getId(), resultNewBooking.getId());
 
-            if (bookingRepository.existsBySessionIdAndUserId(session.getId(), user.getId())) {
-                logger.warn("Booking already exists for session ID: {} and user ID: {}", 
-                    session.getId(), user.getId());
-                throw new BusinessException(ErrorCode.BOOKING_ALREADY_EXISTS);
-            }
-
-            // Check if session has enough capacity
-            if (session.getCurrentParticipants() + bookingRequest.getParticipants() > session.getMaxParticipants()) {
-                logger.warn("Session is full. Current participants: {}, Max participants: {}, Requested: {}", 
-                    session.getCurrentParticipants(), session.getMaxParticipants(), bookingRequest.getParticipants());
-                throw new BusinessException(ErrorCode.SESSION_FULL);
-            }
-
-            Booking booking = new Booking();
-            booking.setSession(session);
-            booking.setUser(user);
-            booking.setParticipants(bookingRequest.getParticipants());
-            booking.setTotalPrice(session.getPricePerPerson().multiply(java.math.BigDecimal.valueOf(bookingRequest.getParticipants())));
-            booking.setTotalAmount(booking.getTotalPrice());
-            booking.setStatus(Booking.BookingStatus.PENDING);
-            
-            booking = bookingRepository.save(booking);
-            logger.info("Successfully created booking with ID: {} for session ID: {}", 
-                booking.getId(), session.getId());
-
-            return ResponseEntity.ok(mapToBookingResponse(booking));
+            return ResponseEntity.ok(mapToBookingResponse(resultNewBooking));
         } catch (BusinessException e) {
             logger.error("Business error while creating booking: {}", e.getMessage());
             throw e;
@@ -87,22 +57,22 @@ public class BookingController {
         }
     }
 
-    @GetMapping("/my")
+    @PostMapping("/my")
     public ResponseEntity<List<BookingResponse>> getMyBookings() {
         logger.info("Received request to fetch user's bookings");
         try {
             String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> {
-                    logger.error("User not found with email: {}", userEmail);
-                    return new BusinessException(ErrorCode.NOT_FOUND);
-                });
-            
+                    .orElseThrow(() -> {
+                        logger.error("User not found with email: {}", userEmail);
+                        return new BusinessException(ErrorCode.NOT_FOUND);
+                    });
+
             List<Booking> bookings = bookingRepository.findByUserId(user.getId());
             List<BookingResponse> response = bookings.stream()
                     .map(this::mapToBookingResponse)
                     .collect(Collectors.toList());
-            
+
             logger.info("Found {} bookings for user ID: {}", bookings.size(), user.getId());
             return ResponseEntity.ok(response);
         } catch (BusinessException e) {
@@ -120,10 +90,10 @@ public class BookingController {
         try {
             String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> {
-                    logger.error("User not found with email: {}", userEmail);
-                    return new BusinessException(ErrorCode.NOT_FOUND);
-                });
+                    .orElseThrow(() -> {
+                        logger.error("User not found with email: {}", userEmail);
+                        return new BusinessException(ErrorCode.NOT_FOUND);
+                    });
 
             return bookingRepository.findById(bookingId)
                     .filter(booking -> booking.getUser().getId().equals(user.getId()))
@@ -165,4 +135,4 @@ public class BookingController {
                 .totalPrice(booking.getTotalPrice())
                 .build();
     }
-} 
+}
