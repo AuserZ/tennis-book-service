@@ -56,6 +56,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/tennis-fields/**").permitAll()
                     .requestMatchers("/api/coaches/**").permitAll()
                     .requestMatchers("/healthz").permitAll()
+                    .requestMatchers("/actuator/**").permitAll()
                     .anyRequest().authenticated();
             })
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
