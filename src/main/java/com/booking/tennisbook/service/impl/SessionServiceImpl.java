@@ -5,11 +5,11 @@ import com.booking.tennisbook.dto.session.SessionAvailibilityResponse;
 import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Session;
-import com.booking.tennisbook.repository.CoachRepository;
 import com.booking.tennisbook.repository.SessionRepository;
 import com.booking.tennisbook.service.SessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 @Service
 public class SessionServiceImpl implements SessionService {
