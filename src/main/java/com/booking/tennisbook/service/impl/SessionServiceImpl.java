@@ -11,6 +11,7 @@ import com.booking.tennisbook.service.SessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Service
 public class SessionServiceImpl implements SessionService {
 
     private static final Logger logger = LoggerFactory.getLogger(SessionServiceImpl.class);
