@@ -68,8 +68,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         logger.info("Configuring CORS configuration");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("https://tennis-book.onrender.com"));
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",
+            "https://tennis-book.onrender.com"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -91,4 +94,4 @@ public class SecurityConfig {
         logger.info("Creating BCryptPasswordEncoder bean");
         return new BCryptPasswordEncoder();
     }
-} 
+}
