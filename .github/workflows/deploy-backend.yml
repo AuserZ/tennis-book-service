@@ -1,0 +1,45 @@
+name: Deploy Spring Boot API
+
+on:
+  push:
+    branches:
+      - prod-oracle          # or backend branch name
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'  # avoid infinite loops when tweaking workflow
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 22
+        uses: actions/setup-java@v4
+        with:
+          java-version: '22'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: ./mvnw -B clean package
+
+      - name: Copy JAR to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:   ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:     ${{ secrets.SSH_KEY }}
+          source:  "target/*-SNAPSHOT.jar"
+          target:  "/opt/app/tennis-book-service/app.jar"
+
+      - name: Restart backend via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_KEY }}
+          script: |
+            sudo systemctl restart ${{ secrets.SERVICE_NAME }}.service
+            sudo systemctl status  ${{ secrets.SERVICE_NAME }}.service --no-pager
