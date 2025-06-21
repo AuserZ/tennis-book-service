@@ -6,7 +6,6 @@ on:
       - prod-oracle   # or backend branch name
     paths-ignore:
       - 'README.md'
-      - '.github/**'  # avoid infinite loops when tweaking workflow
 
 jobs:
   build-and-deploy:
