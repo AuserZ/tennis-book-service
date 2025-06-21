@@ -1,12 +1,10 @@
 name: Deploy Spring Boot API
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - prod-oracle   # or backend branch name
-    paths-ignore:
-      - 'README.md'
-      - '.github/**'  # avoid infinite loops when tweaking workflow
+      - prod-oracle
 
 jobs:
   build-and-deploy:
