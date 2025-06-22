@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key:     ${{ secrets.SSH_KEY }}
           source:  "target/tennis-book-0.0.1-SNAPSHOT.jar"
-          target:  "/opt/app/tennis-book-service/target/"
+          target:  "/opt/app/tennis-book-service/"
 
       - name: Restart backend via SSH
         uses: appleboy/ssh-action@v0.1.7
