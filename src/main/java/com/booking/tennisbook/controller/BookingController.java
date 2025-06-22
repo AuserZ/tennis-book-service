@@ -38,21 +38,21 @@ public class BookingController {
 
     @PostMapping("/new-bookings")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingRequest bookingRequest) {
-        logger.info("Received booking request for session ID: {} with {} participants",
-                bookingRequest.getSessionId(), bookingRequest.getParticipants());
-
+        logger.info("[START] Received booking request: sessionId={}, participants={}", bookingRequest.getSessionId(), bookingRequest.getParticipants());
         try {
+            logger.info("[STEP] Calling bookingService.createBooking");
             Booking resultNewBooking = bookingService.createBooking(bookingRequest);
 
-            logger.info("Successfully created booking with ID: {} for session ID: {}",
-                    resultNewBooking.getId(), resultNewBooking.getId());
+            logger.info("[STEP] Successfully created booking: bookingId={}, sessionId={}", resultNewBooking.getId(), resultNewBooking.getSession().getId());
 
-            return ResponseEntity.ok(mapToBookingResponse(resultNewBooking));
+            BookingResponse response = mapToBookingResponse(resultNewBooking);
+            logger.info("[END] Returning booking response: {}", response);
+            return ResponseEntity.ok(response);
         } catch (BusinessException e) {
-            logger.error("Business error while creating booking: {}", e.getMessage());
+            logger.error("[ERROR] BusinessException: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
             throw e;
         } catch (Exception e) {
-            logger.error("Unexpected error while creating booking: {}", e.getMessage(), e);
+            logger.error("[ERROR] Unexpected Exception: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
             throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
