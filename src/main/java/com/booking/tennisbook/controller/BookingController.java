@@ -36,7 +36,7 @@ public class BookingController {
     private final UserRepository userRepository;
     private final BookingService bookingService;
 
-    @PostMapping("/newBookSession")
+    @PostMapping("/new-bookings")
     public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingRequest bookingRequest) {
         logger.info("Received booking request for session ID: {} with {} participants",
                 bookingRequest.getSessionId(), bookingRequest.getParticipants());
@@ -57,7 +57,7 @@ public class BookingController {
         }
     }
 
-    @PostMapping("/my")
+    @PostMapping("/my-bookings")
     public ResponseEntity<List<BookingResponse>> getMyBookings() {
         logger.info("Received request to fetch user's bookings");
         try {

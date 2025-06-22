@@ -59,13 +59,6 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessException(ErrorCode.SESSION_FULL);
         }
 
-        // update session participants
-        session = sessionService.updateSessionParticipants(session, bookingRequest.getParticipants());
-        if (session == null) {
-            logger.error("Failed to update session participants for session ID: {}", bookingRequest.getSessionId());
-            throw new BusinessException(ErrorCode.SESSION_NOT_ENOUGH);
-        }
-
         Booking booking = new Booking();
         booking.setSession(session);
         booking.setUser(user);
@@ -73,7 +66,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setTotalPrice(session.getPricePerPerson()
                 .multiply(java.math.BigDecimal.valueOf(bookingRequest.getParticipants())));
         booking.setTotalAmount(booking.getTotalPrice());
-        booking.setStatus(Booking.BookingStatus.CONFIRMED);
+        booking.setStatus(Booking.BookingStatus.PENDING);
         booking = bookingRepository.save(booking);
 
         return booking;

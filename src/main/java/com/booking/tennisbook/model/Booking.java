@@ -32,9 +32,6 @@ public class Booking {
     @Column(nullable = false)
     private BigDecimal totalPrice;
 
-    @Column(name = "total_amount", nullable = false)
-    private BigDecimal totalAmount;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus status;
@@ -51,13 +48,5 @@ public class Booking {
         PENDING,
         CONFIRMED,
         CANCELLED
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
     }
 } 

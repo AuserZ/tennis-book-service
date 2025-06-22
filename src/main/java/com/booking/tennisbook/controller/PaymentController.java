@@ -1,5 +1,6 @@
 package com.booking.tennisbook.controller;
 
+import com.booking.tennisbook.dto.payment.PaymentRequestBody;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.service.PaymentService;
 import org.springframework.http.ResponseEntity;
@@ -17,17 +18,11 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    @PostMapping("/booking/{bookingId}")
-    public ResponseEntity<Payment> createPayment(
-            @PathVariable Long bookingId,
-            @RequestParam String paymentMethod) {
-        Payment payment = paymentService.createPayment(bookingId, paymentMethod);
-        return ResponseEntity.ok(payment);
-    }
+    @PostMapping("/booking")
+    public ResponseEntity<Payment> createPayment(PaymentRequestBody requestBody) {
 
-    @PostMapping("/{paymentId}/process")
-    public ResponseEntity<Payment> processPayment(@PathVariable Long paymentId) {
-        Payment payment = paymentService.processPayment(paymentId);
+
+        Payment payment = paymentService.createPayment(requestBody.getBookingId(), requestBody.getPaymentMethod());
         return ResponseEntity.ok(payment);
     }
 

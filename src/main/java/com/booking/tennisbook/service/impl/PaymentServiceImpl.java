@@ -4,9 +4,15 @@ import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Booking;
 import com.booking.tennisbook.model.Payment;
+import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.repository.BookingRepository;
 import com.booking.tennisbook.repository.PaymentRepository;
+import com.booking.tennisbook.repository.SessionRepository;
 import com.booking.tennisbook.service.PaymentService;
+import com.booking.tennisbook.service.SessionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +23,18 @@ import java.util.UUID;
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
+    Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
+
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository) {
+    @Autowired
+    private final SessionService sessionService;
+
+    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,SessionService sessionService) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
+        this.sessionService = sessionService;
     }
 
     @Override
@@ -37,23 +49,39 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = new Payment();
         payment.setBooking(booking);
-        payment.setAmount(booking.getTotalAmount());
+        payment.setAmount(booking.getTotalPrice());
         payment.setPaymentMethod(paymentMethod);
         payment.setStatus(Payment.PaymentStatus.PENDING);
         payment.setTransactionId(UUID.randomUUID().toString());
         payment.setCreatedAt(LocalDateTime.now());
+        paymentRepository.save(payment);
 
-        return paymentRepository.save(payment);
+        Payment processedPayment = processPayment(payment.getId(), booking);
+
+        if (processedPayment == null) {
+            logger.error("Payment processing failed for booking ID: {}", bookingId);
+            throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        }
+        return processedPayment;
     }
 
-    @Override
     @Transactional
-    public Payment processPayment(Long paymentId) {
+    public Payment processPayment(Long paymentId, Booking booking) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
+//        Booking booking = bookingRepository.findById(payment.getBooking().getId())
+//                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+
         if (payment.getStatus() != Payment.PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
+        }
+
+        // update session participants
+        Session session = sessionService.updateSessionParticipants(booking.getSession(), booking.getParticipants());
+        if (session == null) {
+            logger.error("Failed to update session participants for session ID: {}", booking.getSession());
+            throw new BusinessException(ErrorCode.SESSION_NOT_ENOUGH);
         }
 
         // Here you would integrate with a real payment gateway
@@ -62,7 +90,6 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setProcessedAt(LocalDateTime.now());
 
         // Update booking status
-        Booking booking = payment.getBooking();
         booking.setStatus(Booking.BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
 
