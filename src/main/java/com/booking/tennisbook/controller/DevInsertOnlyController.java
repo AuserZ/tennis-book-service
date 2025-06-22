@@ -25,7 +25,9 @@ public class DevInsertOnlyController {
 
     private final Logger log = (Logger) LoggerFactory.getLogger(getClass());
 
-    @PostMapping(consumes = MediaType.TEXT_PLAIN_VALUE,
+    @PostMapping(
+            path = "/",
+            consumes = MediaType.TEXT_PLAIN_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> runInsert(@RequestBody String sql) {
 

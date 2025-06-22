@@ -55,7 +55,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/sessions/**").permitAll()
                     .requestMatchers("/api/tennis-fields/**").permitAll()
                     .requestMatchers("/api/coaches/**").permitAll()
-                    .requestMatchers("/sql").permitAll()
+                    .requestMatchers("/sql/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
                     .anyRequest().authenticated();
             })
