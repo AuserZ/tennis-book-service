@@ -95,6 +95,14 @@ public class BookingController {
         }
     }
 
+    @GetMapping("/{bookingId}")
+    public ResponseEntity<?> getBookingById(@PathVariable Long bookingId) {
+        logger.info("Start - GET Booking by ID: {}", bookingId);
+        return bookingRepository.findById(bookingId)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(@PathVariable Long bookingId) {
         logger.info("Received request to cancel booking ID: {}", bookingId);
