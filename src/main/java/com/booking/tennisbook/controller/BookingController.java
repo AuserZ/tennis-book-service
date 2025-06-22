@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -53,10 +54,11 @@ public class BookingController {
 
             Map<String, Object> response = Map.of(
                 "message", "Booking created successfully",
-                "bookingId", resultNewBooking.getId()
+                "bookingId", resultNewBooking.getId(),
+                "status", 201
             );
             logger.info("[END] Returning booking response: {}", response);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (BusinessException e) {
             logger.error("[ERROR] BusinessException: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
             throw e;
