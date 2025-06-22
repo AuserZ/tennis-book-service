@@ -25,6 +25,7 @@ public enum ErrorCode {
     BOOKING_CANCELLED(2006, "Booking is already cancelled"),
     BOOKING_EXPIRED(2007, "Booking has expired"),
     SESSION_NOT_ENOUGH(2008, "Session is not enough for current participants"),
+    BOOKING_FAILED(2009, "Booking failed"),
 
     // Payment errors
     PAYMENT_FAILED(3001, "Payment failed"),
