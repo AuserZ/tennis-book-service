@@ -32,8 +32,8 @@ jobs:
           host:   ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key:     ${{ secrets.SSH_KEY }}
-          source:  "target/*-SNAPSHOT.jar"
-          target:  "/opt/app/tennis-book-service/app.jar"
+          source:  "target/tennis-book-0.0.1-SNAPSHOT.jar"
+          target:  "/opt/app/tennis-book-service/target/tennis-book-0.0.1-SNAPSHOT.jar"
 
       - name: Restart backend via SSH
         uses: appleboy/ssh-action@v0.1.7
