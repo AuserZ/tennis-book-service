@@ -21,6 +21,7 @@ import com.booking.tennisbook.repository.UserRepository;
 import com.booking.tennisbook.service.BookingService;
 
 import java.awt.print.Book;
+import java.math.BigDecimal;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -59,13 +60,16 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessException(ErrorCode.SESSION_FULL);
         }
 
+        BigDecimal totalPrice = session.getPricePerPerson()
+                .multiply(BigDecimal.valueOf(bookingRequest.getParticipants()));
+
         Booking booking = new Booking();
         booking.setSession(session);
         booking.setUser(user);
         booking.setParticipants(bookingRequest.getParticipants());
         booking.setTotalPrice(session.getPricePerPerson()
                 .multiply(java.math.BigDecimal.valueOf(bookingRequest.getParticipants())));
-        booking.setTotalAmount(booking.getTotalPrice());
+        booking.setTotalPrice(totalPrice);
         booking.setStatus(Booking.BookingStatus.PENDING);
         booking = bookingRepository.save(booking);
 
