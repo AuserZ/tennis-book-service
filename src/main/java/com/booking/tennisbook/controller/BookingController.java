@@ -22,7 +22,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -37,7 +40,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping("/new-bookings")
-    public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingRequest bookingRequest) {
+    public ResponseEntity<?> createBooking(@Valid @RequestBody BookingRequest bookingRequest) {
         logger.info("[START] Received booking request: sessionId={}, participants={}", bookingRequest.getSessionId(), bookingRequest.getParticipants());
         try {
             logger.info("[STEP] Calling bookingService.createBooking");
@@ -45,7 +48,13 @@ public class BookingController {
 
             logger.info("[STEP] Successfully created booking: bookingId={}, sessionId={}", resultNewBooking.getId(), resultNewBooking.getSession().getId());
 
-            BookingResponse response = mapToBookingResponse(resultNewBooking);
+            if(isEmpty(resultNewBooking))
+                throw new BusinessException(ErrorCode.BOOKING_FAILED);
+
+            Map<String, Object> response = Map.of(
+                "message", "Booking created successfully",
+                "bookingId", resultNewBooking.getId()
+            );
             logger.info("[END] Returning booking response: {}", response);
             return ResponseEntity.ok(response);
         } catch (BusinessException e) {
