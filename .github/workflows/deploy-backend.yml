@@ -42,5 +42,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key:      ${{ secrets.SSH_KEY }}
           script: |
-            sudo systemctl restart ${{ secrets.SERVICE_NAME }}.service
+            sudo systemctl stop ${{ secrets.SERVICE_NAME }}.service
+            ps aux | grep java
+            sudo systemctl start ${{ secrets.SERVICE_NAME }}.service
             sudo systemctl status  ${{ secrets.SERVICE_NAME }}.service --no-pager
