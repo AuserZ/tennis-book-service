@@ -63,15 +63,8 @@ public class SessionController {
     public ResponseEntity<List<SessionDto>> getAllSessionsByType(SessionByTypeRequest request) {
         logger.info("Received request to fetch all sessions");
         try {
-            List<Session> sessions = new ArrayList<Session>() {
-            };
-            if (isNotEmpty(request.getSessionDate())) {
-                sessions = sessionRepository.findByTypeAndDate(request.getSessionType(),
-                        request.getSessionDate());
-            } else {
-
-                sessions = sessionRepository.findByTypSessions(request.getSessionType());
-            }
+            List<Session> sessions = sessionRepository.findByTypeAndDate(request.getSessionType(),
+                    request.getSessionDate());
             logger.info("Successfully retrieved {} sessions from database", sessions.size());
 
             List<SessionDto> sessionDtos = sessions.stream()
