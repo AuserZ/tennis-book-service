@@ -60,7 +60,7 @@ public class SessionController {
     }
 
     @PostMapping("/get-session-by-type")
-    public ResponseEntity<List<SessionDto>> getAllSessionsByType(SessionByTypeRequest request) {
+    public ResponseEntity<List<SessionDto>> getAllSessionsByType(@RequestBody SessionByTypeRequest request) {
         logger.info("Received request to fetch all sessions");
         try {
             List<Session> sessions = sessionRepository.findByTypeAndDate(request.getSessionType(),
