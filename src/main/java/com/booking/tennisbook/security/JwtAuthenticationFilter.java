@@ -16,6 +16,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.booking.tennisbook.dto.error.ErrorResponse;
+import io.jsonwebtoken.ExpiredJwtException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -92,6 +95,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 } else {
                     logger.debug("User email is null or user is already authenticated");
                 }
+            } catch (ExpiredJwtException e) {
+                logger.error("JWT token expired: {}", e.getMessage(), e);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                        .errorId(401)
+                        .message("Token expired")
+                        .build();
+                ObjectMapper mapper = new ObjectMapper();
+                response.getWriter().write(mapper.writeValueAsString(errorResponse));
+                return;
             } catch (Exception e) {
                 logger.error("Error processing JWT token: {}", e.getMessage(), e);
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
