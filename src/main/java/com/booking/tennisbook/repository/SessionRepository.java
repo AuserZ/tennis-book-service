@@ -20,4 +20,7 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
 
     @Query("SELECT s FROM Session s WHERE s.coach.id = :coachId AND s.date = :date")
     List<Session> findByCoachIdAndDate(@Param("coachId") Long coachId, @Param("date") LocalDate date);
+
+    @Query("SELECT s FROM Session s WHERE s.type= :type")
+    List<Session> findByTypSessions(@Param("type") String type);
 } 

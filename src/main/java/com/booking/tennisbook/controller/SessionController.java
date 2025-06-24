@@ -2,6 +2,7 @@ package com.booking.tennisbook.controller;
 
 import com.booking.tennisbook.dto.session.SessionAvailibilityRequest;
 import com.booking.tennisbook.dto.session.SessionAvailibilityResponse;
+import com.booking.tennisbook.dto.session.SessionByTypeRequest;
 import com.booking.tennisbook.dto.session.SessionDto;
 import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
@@ -42,6 +43,25 @@ public class SessionController {
         logger.info("Received request to fetch all sessions");
         try {
             List<Session> sessions = sessionRepository.findAll();
+            logger.info("Successfully retrieved {} sessions from database", sessions.size());
+            
+            List<SessionDto> sessionDtos = sessions.stream()
+                    .map(SessionDto::fromEntity)
+                    .collect(Collectors.toList());
+            
+            logger.info("Successfully converted sessions to DTOs");
+            return ResponseEntity.ok(sessionDtos);
+        } catch (Exception e) {
+            logger.error("Error fetching sessions: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @PostMapping("/get-session-by-type")
+    public ResponseEntity<List<SessionDto>> getAllSessionsByType(SessionByTypeRequest request) {
+        logger.info("Received request to fetch all sessions");
+        try {
+            List<Session> sessions = sessionRepository.findByTypSessions(request.getSessionType());
             logger.info("Successfully retrieved {} sessions from database", sessions.size());
             
             List<SessionDto> sessionDtos = sessions.stream()
