@@ -1,5 +1,7 @@
 package com.booking.tennisbook.dto.session;
 
+import java.time.LocalDate;
+
 import io.micrometer.common.lang.NonNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,4 +15,5 @@ import lombok.ToString;
 public class SessionByTypeRequest {
     @NonNull
     private String sessionType;
+    private LocalDate sessionDate;
 }

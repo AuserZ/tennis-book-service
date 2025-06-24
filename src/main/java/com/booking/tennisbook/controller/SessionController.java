@@ -19,10 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 @RestController
 @RequestMapping("/api/sessions")
@@ -44,11 +46,11 @@ public class SessionController {
         try {
             List<Session> sessions = sessionRepository.findAll();
             logger.info("Successfully retrieved {} sessions from database", sessions.size());
-            
+
             List<SessionDto> sessionDtos = sessions.stream()
                     .map(SessionDto::fromEntity)
                     .collect(Collectors.toList());
-            
+
             logger.info("Successfully converted sessions to DTOs");
             return ResponseEntity.ok(sessionDtos);
         } catch (Exception e) {
@@ -61,13 +63,21 @@ public class SessionController {
     public ResponseEntity<List<SessionDto>> getAllSessionsByType(SessionByTypeRequest request) {
         logger.info("Received request to fetch all sessions");
         try {
-            List<Session> sessions = sessionRepository.findByTypSessions(request.getSessionType());
+            List<Session> sessions = new ArrayList<Session>() {
+            };
+            if (isNotEmpty(request.getSessionDate())) {
+                sessions = sessionRepository.findByTypeAndDate(request.getSessionType(),
+                        request.getSessionDate());
+            } else {
+
+                sessions = sessionRepository.findByTypSessions(request.getSessionType());
+            }
             logger.info("Successfully retrieved {} sessions from database", sessions.size());
-            
+
             List<SessionDto> sessionDtos = sessions.stream()
                     .map(SessionDto::fromEntity)
                     .collect(Collectors.toList());
-            
+
             logger.info("Successfully converted sessions to DTOs");
             return ResponseEntity.ok(sessionDtos);
         } catch (Exception e) {
@@ -104,7 +114,8 @@ public class SessionController {
     }
 
     @PostMapping("/availability")
-    public ResponseEntity<SessionAvailibilityResponse> getSessionAvailability(@RequestBody SessionAvailibilityRequest request) {
+    public ResponseEntity<SessionAvailibilityResponse> getSessionAvailability(
+            @RequestBody SessionAvailibilityRequest request) {
 
         if (isEmpty(request)) {
             logger.warn("No sessions found for the provided ids: {}", request.getSessionId());
@@ -114,7 +125,7 @@ public class SessionController {
         logger.info("Checking availability for sessions with ids: {}", request.getSessionId());
         SessionAvailibilityResponse session = sessionService.checkSessionAvailability(request);
 
-        if(isEmpty(session)){
+        if (isEmpty(session)) {
             logger.error("No availability found for session with id: {}", request.getSessionId());
             throw new BusinessException(ErrorCode.SESSION_NOT_FOUND);
         }
@@ -171,4 +182,4 @@ public class SessionController {
                     return ResponseEntity.notFound().build();
                 });
     }
-} 
+}
