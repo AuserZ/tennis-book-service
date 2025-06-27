@@ -1,0 +1,25 @@
+package com.booking.tennisbook.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.List;
+
+@Data
+@Table(name = "payment_methods")
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+public class PaymentMethod {
+    @Id
+    private Long id;
+
+    @OneToMany(mappedBy = "payment_method", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PaymentStep> paymentSteps;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String accountNumber;
+}
