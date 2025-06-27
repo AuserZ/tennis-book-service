@@ -29,7 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
-    private final PaymentMethodRepository   paymentMethodRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
 
     @Autowired
     private final SessionService sessionService;
@@ -47,8 +47,8 @@ public class PaymentServiceImpl implements PaymentService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
 
-        PaymentMethod paymentMethod = paymentRepository.findById(paymentMethodId)
-                .orElseThrow(()-> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND)).getPaymentMethod();
+        PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentMethodId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
 
         if (paymentRepository.existsByBookingIdAndStatus(bookingId, Payment.PaymentStatus.COMPLETED)) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_EXISTS);
