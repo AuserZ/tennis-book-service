@@ -21,7 +21,7 @@ public class PaymentController {
     @PostMapping("/booking")
     public ResponseEntity<Payment> createPayment(PaymentRequestBody requestBody) {
 
-        Payment payment = paymentService.createPayment(requestBody.getBookingId(), requestBody.getPaymentMethod());
+        Payment payment = paymentService.createPayment(requestBody.getBookingId(), requestBody.getPaymentMethodId());
         return ResponseEntity.ok(payment);
     }
 

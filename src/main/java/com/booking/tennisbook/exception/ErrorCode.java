@@ -33,7 +33,8 @@ public enum ErrorCode {
     PAYMENT_ALREADY_PROCESSED(3003, "Payment already processed"),
     PAYMENT_NOT_FOUND(3004, "Payment not found"),
     PAYMENT_ALREADY_EXISTS(3005, "Payment already exists for this booking"),
-    INVALID_PAYMENT_STATUS(3006, "Invalid payment status for this operation");
+    INVALID_PAYMENT_STATUS(3006, "Invalid payment status for this operation"),
+    PAYMENT_METHOD_NOT_FOUND(3007, "Payment method not found");
 
     private final int code;
     private final String message;

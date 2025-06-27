@@ -11,5 +11,5 @@ public class PaymentRequestBody {
     private Long bookingId;
 
     @NonNull
-    private String paymentMethod;
+    private Long paymentMethodId;
 }

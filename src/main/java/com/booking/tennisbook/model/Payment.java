@@ -28,7 +28,7 @@ public class Payment {
 
     @OneToOne
     @JoinColumn(name = "payment_method_id", nullable = false)
-    private PaymentMethod paymentMethodId;
+    private PaymentMethod paymentMethod;
 
     @Column(name = "transaction_id", unique = true, nullable = false)
     private String transactionId;

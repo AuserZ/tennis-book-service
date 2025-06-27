@@ -4,8 +4,10 @@ import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Booking;
 import com.booking.tennisbook.model.Payment;
+import com.booking.tennisbook.model.PaymentMethod;
 import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.repository.BookingRepository;
+import com.booking.tennisbook.repository.PaymentMethodRepository;
 import com.booking.tennisbook.repository.PaymentRepository;
 import com.booking.tennisbook.repository.SessionRepository;
 import com.booking.tennisbook.service.PaymentService;
@@ -27,21 +29,26 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
+    private final PaymentMethodRepository   paymentMethodRepository;
 
     @Autowired
     private final SessionService sessionService;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,SessionService sessionService) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,SessionService sessionService, PaymentMethodRepository paymentMethodRepository) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.sessionService = sessionService;
+        this.paymentMethodRepository = paymentMethodRepository;
     }
 
     @Override
     @Transactional
-    public Payment createPayment(Long bookingId, String paymentMethod) {
+    public Payment createPayment(Long bookingId, Long paymentMethodId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+
+        PaymentMethod paymentMethod = paymentRepository.findById(paymentMethodId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND)).getPaymentMethod();
 
         if (paymentRepository.existsByBookingIdAndStatus(bookingId, Payment.PaymentStatus.COMPLETED)) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_EXISTS);
@@ -69,9 +76,6 @@ public class PaymentServiceImpl implements PaymentService {
     public Payment processPayment(Long paymentId, Booking booking) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
-
-//        Booking booking = bookingRepository.findById(payment.getBooking().getId())
-//                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
 
         if (payment.getStatus() != Payment.PaymentStatus.PENDING) {
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
