@@ -18,7 +18,7 @@ public class PaymentMethod {
     private List<PaymentStep> paymentSteps;
 
     @Column(nullable = false)
-    private String name;
+    private String methodName;
 
     @Column(nullable = false)
     private String accountNumber;
