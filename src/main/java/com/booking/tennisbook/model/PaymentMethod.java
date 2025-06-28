@@ -12,7 +12,7 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class PaymentMethod {
     @Id
-    private Long id;
+    private String id;
 
     @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentStep> paymentSteps;
