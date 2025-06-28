@@ -110,7 +110,7 @@ class PaymentServiceImplTest {
         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
         when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
         when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
-        when(paymentStepRepository.findByPaymentId(1L)).thenReturn(List.of());
+        when(paymentStepRepository.findByPaymentMethodId(1L)).thenReturn(List.of());
 
         CreatePaymentResponse response = paymentService.createPayment(1L, 1L);
 
