@@ -14,7 +14,7 @@ public class PaymentMethod {
     @Id
     private Long id;
 
-    @OneToMany(mappedBy = "payment_method", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentStep> paymentSteps;
 
     @Column(nullable = false)

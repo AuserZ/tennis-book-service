@@ -14,7 +14,7 @@ public class PaymentStep {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "payment_id", nullable = false)
+    @JoinColumn(name = "payment_method_id", nullable = false)
     private Payment payment;
 
     @Column(nullable = false)
