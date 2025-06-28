@@ -1,15 +1,13 @@
 package com.booking.tennisbook.service.impl;
 
+import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
 import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Booking;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.model.PaymentMethod;
 import com.booking.tennisbook.model.Session;
-import com.booking.tennisbook.repository.BookingRepository;
-import com.booking.tennisbook.repository.PaymentMethodRepository;
-import com.booking.tennisbook.repository.PaymentRepository;
-import com.booking.tennisbook.repository.SessionRepository;
+import com.booking.tennisbook.repository.*;
 import com.booking.tennisbook.service.PaymentService;
 import com.booking.tennisbook.service.SessionService;
 import org.slf4j.Logger;
@@ -30,20 +28,22 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final PaymentStepRepository paymentStepRepository;
 
     @Autowired
     private final SessionService sessionService;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,SessionService sessionService, PaymentMethodRepository paymentMethodRepository) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository, SessionService sessionService, PaymentMethodRepository paymentMethodRepository, PaymentStepRepository paymentStepRepository) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.sessionService = sessionService;
         this.paymentMethodRepository = paymentMethodRepository;
+        this.paymentStepRepository = paymentStepRepository;
     }
 
     @Override
     @Transactional
-    public Payment createPayment(Long bookingId, Long paymentMethodId) {
+    public CreatePaymentResponse createPayment(Long bookingId, Long paymentMethodId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
 
@@ -69,7 +69,15 @@ public class PaymentServiceImpl implements PaymentService {
             logger.error("Payment processing failed for booking ID: {}", bookingId);
             throw new BusinessException(ErrorCode.PAYMENT_FAILED);
         }
-        return processedPayment;
+
+        CreatePaymentResponse processedPaymentResponse = new CreatePaymentResponse();
+
+        processedPaymentResponse.setPaymentId(processedPayment.getId());
+        processedPaymentResponse.setMessage(processedPayment.getStatus() == Payment.PaymentStatus.COMPLETED ? "Payment processed successfully" : "Payment processing failed");
+        processedPaymentResponse.setStatus(String.valueOf(processedPayment.getStatus()));
+        processedPaymentResponse.setPaymentSteps(paymentStepRepository.findByPaymentId(processedPayment.getId()));
+
+        return processedPaymentResponse;
     }
 
     @Transactional

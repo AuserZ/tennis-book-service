@@ -1,5 +1,6 @@
 package com.booking.tennisbook.controller;
 
+import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
 import com.booking.tennisbook.dto.payment.PaymentRequestBody;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.service.PaymentService;
@@ -19,9 +20,9 @@ public class PaymentController {
     }
 
     @PostMapping("/booking")
-    public ResponseEntity<Payment> createPayment(PaymentRequestBody requestBody) {
+    public ResponseEntity<CreatePaymentResponse> createPayment(PaymentRequestBody requestBody) {
 
-        Payment payment = paymentService.createPayment(requestBody.getBookingId(), requestBody.getPaymentMethodId());
+        CreatePaymentResponse payment = paymentService.createPayment(requestBody.getBookingId(), requestBody.getPaymentMethodId());
         return ResponseEntity.ok(payment);
     }
 
