@@ -15,10 +15,7 @@ public class PaymentStep {
 
     @ManyToOne
     @JoinColumn(name = "payment_method_id", nullable = false)
-    private Payment payment;
-
-    @Column(nullable = false)
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @Column(nullable = false)
     private String stepDescription;
