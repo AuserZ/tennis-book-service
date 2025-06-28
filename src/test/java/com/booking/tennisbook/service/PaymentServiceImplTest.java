@@ -55,7 +55,7 @@ class PaymentServiceImplTest {
         when(bookingRepository.findById(1L)).thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class, () ->
-                paymentService.createPayment(1L, 1L)
+                paymentService.createPayment(1L, "BCA1")
         );
 
         assertEquals(ErrorCode.BOOKING_NOT_FOUND, exception.getErrorCode());
@@ -65,10 +65,10 @@ class PaymentServiceImplTest {
     void createPayment_PaymentMethodNotFound_ThrowsException() {
         Booking booking = new Booking();
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById(1L)).thenReturn(Optional.empty());
+        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class, () ->
-                paymentService.createPayment(1L, 1L)
+                paymentService.createPayment(1L, "BCA1")
         );
         assertEquals(ErrorCode.PAYMENT_METHOD_NOT_FOUND, exception.getErrorCode());
     }
@@ -78,11 +78,11 @@ class PaymentServiceImplTest {
         Booking booking = new Booking();
         PaymentMethod paymentMethod = new PaymentMethod();
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById(1L)).thenReturn(Optional.of(paymentMethod));
+        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(true);
 
         BusinessException exception = assertThrows(BusinessException.class, () ->
-                paymentService.createPayment(1L, 1L)
+                paymentService.createPayment(1L, "BCA1")
         );
 
         assertEquals(ErrorCode.PAYMENT_ALREADY_EXISTS, exception.getErrorCode());
@@ -106,13 +106,13 @@ class PaymentServiceImplTest {
         payment.setStatus(Payment.PaymentStatus.COMPLETED);
 
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById(1L)).thenReturn(Optional.of(paymentMethod));
+        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
         when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
         when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
-        when(paymentStepRepository.findByPaymentMethodId(1L)).thenReturn(List.of());
+        when(paymentStepRepository.findByPaymentMethodId("BCA1")).thenReturn(List.of());
 
-        CreatePaymentResponse response = paymentService.createPayment(1L, 1L);
+        CreatePaymentResponse response = paymentService.createPayment(1L, "BCA1");
 
         assertNotNull(response);
         assertEquals(1L, response.getPaymentId());

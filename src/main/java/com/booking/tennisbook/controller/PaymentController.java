@@ -3,6 +3,8 @@ package com.booking.tennisbook.controller;
 import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
 import com.booking.tennisbook.dto.payment.PaymentRequestBody;
 import com.booking.tennisbook.model.Payment;
+import com.booking.tennisbook.model.PaymentMethod;
+import com.booking.tennisbook.model.PaymentStep;
 import com.booking.tennisbook.service.PaymentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,5 +44,17 @@ public class PaymentController {
     public ResponseEntity<Payment> refundPayment(@PathVariable Long paymentId) {
         Payment payment = paymentService.refundPayment(paymentId);
         return ResponseEntity.ok(payment);
+    }
+
+    @GetMapping("/methods/{paymentMethodId}")
+    public ResponseEntity<PaymentMethod> getPaymentMethodWithSteps(@PathVariable String paymentMethodId) {
+        PaymentMethod paymentMethod = paymentService.getPaymentMethodWithSteps(paymentMethodId);
+        return ResponseEntity.ok(paymentMethod);
+    }
+
+    @GetMapping("/methods/{paymentMethodId}/steps")
+    public ResponseEntity<List<PaymentStep>> getPaymentStepsByMethod(@PathVariable String paymentMethodId) {
+        List<PaymentStep> paymentSteps = paymentService.getPaymentStepsByMethod(paymentMethodId);
+        return ResponseEntity.ok(paymentSteps);
     }
 } 

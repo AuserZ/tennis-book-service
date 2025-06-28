@@ -6,6 +6,7 @@ import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Booking;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.model.PaymentMethod;
+import com.booking.tennisbook.model.PaymentStep;
 import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.repository.*;
 import com.booking.tennisbook.service.PaymentService;
@@ -42,7 +43,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public CreatePaymentResponse createPayment(Long bookingId, Long paymentMethodId) {
+    public CreatePaymentResponse createPayment(Long bookingId, String paymentMethodId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
 
@@ -74,7 +75,7 @@ public class PaymentServiceImpl implements PaymentService {
         processedPaymentResponse.setPaymentId(processedPayment.getId());
         processedPaymentResponse.setMessage(processedPayment.getStatus() == Payment.PaymentStatus.COMPLETED ? "Payment processed successfully" : "Payment processing failed");
         processedPaymentResponse.setStatus(String.valueOf(processedPayment.getStatus()));
-        processedPaymentResponse.setPaymentSteps(paymentStepRepository.findByPaymentMethodId(processedPayment.getId()));
+        processedPaymentResponse.setPaymentSteps(paymentStepRepository.findByPaymentMethodId(paymentMethodId));
 
         return processedPaymentResponse;
     }
@@ -139,5 +140,16 @@ public class PaymentServiceImpl implements PaymentService {
         bookingRepository.save(booking);
 
         return paymentRepository.save(payment);
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodWithSteps(String paymentMethodId) {
+        return paymentMethodRepository.findById(paymentMethodId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
+    }
+
+    @Override
+    public List<PaymentStep> getPaymentStepsByMethod(String paymentMethodId) {
+        return paymentStepRepository.findByPaymentMethodId(paymentMethodId);
     }
 } 
