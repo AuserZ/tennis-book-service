@@ -22,7 +22,6 @@ import java.util.UUID;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
-
     Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private final PaymentRepository paymentRepository;
@@ -75,7 +74,7 @@ public class PaymentServiceImpl implements PaymentService {
         processedPaymentResponse.setPaymentId(processedPayment.getId());
         processedPaymentResponse.setMessage(processedPayment.getStatus() == Payment.PaymentStatus.COMPLETED ? "Payment processed successfully" : "Payment processing failed");
         processedPaymentResponse.setStatus(String.valueOf(processedPayment.getStatus()));
-        processedPaymentResponse.setPaymentSteps(paymentStepRepository.findByPaymentId(processedPayment.getId()));
+        processedPaymentResponse.setPaymentSteps(paymentStepRepository.findByPaymentMethodId(processedPayment.getId()));
 
         return processedPaymentResponse;
     }
