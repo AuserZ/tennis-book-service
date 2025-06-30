@@ -216,6 +216,8 @@ public class PaymentUtil {
                 .bodyToMono(PaymentDokuResponse.class)
                 .block();
 
+                logger.info("Response: {}",response);
+
             long endTime = System.currentTimeMillis();
             logger.info("[END] DOKU Checkout payment processed successfully in {}ms", (endTime - startTime));
             logger.debug("Payment response: {}", response);
@@ -229,19 +231,29 @@ public class PaymentUtil {
     }
 
     private String createCheckoutSignature(String clientId, String requestId, String timestamp, String requestBody) {
-        String stringToSign = clientId + ":" + requestId + ":" + timestamp + ":" + requestBody;
-        return "HMACSHA256=" + hmacSha256Base64(stringToSign, dokuClientSecret);
-    }
-
-    private static String hmacSha256Base64(String data, String secret) {
         try {
+            // 1. Digest: Base64(SHA256(requestBody))
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(requestBody.getBytes(StandardCharsets.UTF_8));
+            String digestBase64 = Base64.getEncoder().encodeToString(hash);
+
+            // 2. Build stringToSign as per DOKU spec
+            String stringToSign =
+                "Client-Id:" + clientId + "\n" +
+                "Request-Id:" + requestId + "\n" +
+                "Request-Timestamp:" + timestamp + "\n" +
+                "Request-Target:/checkout/v1/payment\n" +
+                "Digest:" + digestBase64;
+
+            // 3. HMACSHA256 and Base64 encode
             Mac sha256Hmac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            SecretKeySpec keySpec = new SecretKeySpec(dokuClientSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
             sha256Hmac.init(keySpec);
-            byte[] macData = sha256Hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(macData);
+            byte[] macData = sha256Hmac.doFinal(stringToSign.getBytes(StandardCharsets.UTF_8));
+            String signatureBase64 = Base64.getEncoder().encodeToString(macData);
+            return "HMACSHA256=" + signatureBase64;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to calculate HMAC-SHA256", e);
+            throw new RuntimeException("Failed to create DOKU Checkout signature", e);
         }
     }
 
