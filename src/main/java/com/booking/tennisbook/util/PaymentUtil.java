@@ -119,6 +119,8 @@ public class PaymentUtil {
         return dokuPaymentRequest;
     }
 
+    // Commented out the old processPayment method
+    /*
     public PaymentDokuResponse processPayment(DokuPaymentRequest paymentRequest) {
         long startTime = System.currentTimeMillis();
         logger.info("[START] Processing DOKU payment request");
@@ -152,6 +154,76 @@ public class PaymentUtil {
             long endTime = System.currentTimeMillis();
             logger.error("[ERROR] Failed to process DOKU payment after {}ms", (endTime - startTime), e);
             throw new RuntimeException("Failed to process DOKU payment", e);
+        }
+    }
+    */
+
+    public PaymentDokuResponse processPaymentCheckout(DokuPaymentRequest paymentRequest) {
+        long startTime = System.currentTimeMillis();
+        logger.info("[START] Processing DOKU Checkout payment request");
+        
+        try {
+            logger.debug("Serializing payment request to JSON");
+            String minifiedJson = objectMapper.writeValueAsString(paymentRequest);
+            logger.debug("Payment request JSON: {}", minifiedJson);
+            
+            logger.info("Generating timestamp for request");
+            String timestamp = generateTimestamp();
+            logger.debug("Timestamp generated: {}", timestamp);
+            
+            logger.info("Creating request signature");
+            String signature = createCheckoutSignature(minifiedJson, timestamp);
+            logger.debug("Signature created successfully");
+            
+            logger.info("Executing payment request to DOKU Checkout API");
+            PaymentDokuResponse response = executeCheckoutPaymentRequest(minifiedJson, timestamp, signature);
+            
+            long endTime = System.currentTimeMillis();
+            logger.info("[END] DOKU Checkout payment processed successfully in {}ms", (endTime - startTime));
+            logger.debug("Payment response: {}", response);
+            
+            return response;
+        } catch (Exception e) {
+            long endTime = System.currentTimeMillis();
+            logger.error("[ERROR] Failed to process DOKU Checkout payment after {}ms", (endTime - startTime), e);
+            throw new RuntimeException("Failed to process DOKU Checkout payment", e);
+        }
+    }
+
+    private String createCheckoutSignature(String requestBody, String timestamp) {
+        logger.debug("Creating DOKU Checkout signature");
+        
+        // According to DOKU Checkout documentation, signature is HMACSHA256
+        // The signature should be created using the request body and timestamp
+        String stringToSign = requestBody + timestamp;
+        return "HMACSHA256=" + hmacSha256Base64(stringToSign, dokuClientSecret);
+    }
+
+    private PaymentDokuResponse executeCheckoutPaymentRequest(String requestBody, String timestamp, String signature) {
+        logger.debug("Executing DOKU Checkout payment request");
+        
+        return webClient.post()
+                .uri(dokuPaymentApi)
+                .header("Client-Id", dokuClientId)
+                .header("Request-Id", generateRequestId())
+                .header("Request-Timestamp", timestamp)
+                .header("Signature", signature)
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(PaymentDokuResponse.class)
+                .block();
+    }
+
+    private static String hmacSha256Base64(String data, String secret) {
+        try {
+            Mac sha256Hmac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            sha256Hmac.init(keySpec);
+            byte[] macData = sha256Hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(macData);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to calculate HMAC-SHA256", e);
         }
     }
 

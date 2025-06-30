@@ -229,7 +229,7 @@ public class PaymentServiceImpl implements PaymentService {
         
         logger.info("Processing DOKU payment request");
         // Request Payment
-        PaymentDokuResponse response = paymentUtil.processPayment(paymentRequest);
+        PaymentDokuResponse response = paymentUtil.processPaymentCheckout(paymentRequest);
 
         if(isEmpty(response)) {
             logger.error("DOKU payment processing failed for booking ID: {}", bookingId);
