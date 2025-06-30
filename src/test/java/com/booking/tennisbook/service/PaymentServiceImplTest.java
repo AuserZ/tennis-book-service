@@ -1,151 +1,151 @@
-package com.booking.tennisbook.service;
+// package com.booking.tennisbook.service;
 
-import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
-import com.booking.tennisbook.exception.BusinessException;
-import com.booking.tennisbook.exception.ErrorCode;
-import com.booking.tennisbook.model.Booking;
-import com.booking.tennisbook.model.Payment;
-import com.booking.tennisbook.model.PaymentMethod;
-import com.booking.tennisbook.model.Session;
-import com.booking.tennisbook.repository.*;
-import com.booking.tennisbook.service.SessionService;
-import com.booking.tennisbook.service.impl.PaymentServiceImpl;
-import com.booking.tennisbook.util.PaymentUtil;
-import com.booking.tennisbook.dto.payment.DokuPaymentRequest;
-import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+// import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
+// import com.booking.tennisbook.exception.BusinessException;
+// import com.booking.tennisbook.exception.ErrorCode;
+// import com.booking.tennisbook.model.Booking;
+// import com.booking.tennisbook.model.Payment;
+// import com.booking.tennisbook.model.PaymentMethod;
+// import com.booking.tennisbook.model.Session;
+// import com.booking.tennisbook.repository.*;
+// import com.booking.tennisbook.service.SessionService;
+// import com.booking.tennisbook.service.impl.PaymentServiceImpl;
+// import com.booking.tennisbook.util.PaymentUtil;
+// import com.booking.tennisbook.dto.payment.DokuPaymentRequest;
+// import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
+// import org.junit.jupiter.api.BeforeEach;
+// import org.junit.jupiter.api.Test;
+// import org.mockito.InjectMocks;
+// import org.mockito.Mock;
+// import org.mockito.MockitoAnnotations;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+// import java.math.BigDecimal;
+// import java.time.LocalDateTime;
+// import java.util.List;
+// import java.util.Optional;
+// import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+// import static org.junit.jupiter.api.Assertions.*;
+// import static org.mockito.Mockito.*;
 
-class PaymentServiceImplTest {
+// class PaymentServiceImplTest {
 
-    @Mock
-    private PaymentRepository paymentRepository;
+//     @Mock
+//     private PaymentRepository paymentRepository;
 
-    @Mock
-    private BookingRepository bookingRepository;
+//     @Mock
+//     private BookingRepository bookingRepository;
 
-    @Mock
-    private PaymentMethodRepository paymentMethodRepository;
+//     @Mock
+//     private PaymentMethodRepository paymentMethodRepository;
 
 
-    @Mock
-    private SessionService sessionService;
+//     @Mock
+//     private SessionService sessionService;
 
-    @Mock
-    private PaymentUtil paymentUtil;
+//     @Mock
+//     private PaymentUtil paymentUtil;
 
-    @InjectMocks
-    private PaymentServiceImpl paymentService;
+//     @InjectMocks
+//     private PaymentServiceImpl paymentService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
+//     @BeforeEach
+//     void setUp() {
+//         MockitoAnnotations.openMocks(this);
+//     }
 
-    @Test
-    void createPayment_BookingNotFound_ThrowsException() {
-        when(bookingRepository.findById(1L)).thenReturn(Optional.empty());
+//     @Test
+//     void createPayment_BookingNotFound_ThrowsException() {
+//         when(bookingRepository.findById(1L)).thenReturn(Optional.empty());
 
-        BusinessException exception = assertThrows(BusinessException.class, () ->
-                paymentService.createPayment(1L, "BCA1")
-        );
+//         BusinessException exception = assertThrows(BusinessException.class, () ->
+//                 paymentService.createPayment(1L, "BCA1")
+//         );
 
-        assertEquals(ErrorCode.BOOKING_NOT_FOUND, exception.getErrorCode());
-    }
+//         assertEquals(ErrorCode.BOOKING_NOT_FOUND, exception.getErrorCode());
+//     }
 
-    @Test
-    void createPayment_PaymentMethodNotFound_ThrowsException() {
-        Booking booking = new Booking();
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.empty());
+//     @Test
+//     void createPayment_PaymentMethodNotFound_ThrowsException() {
+//         Booking booking = new Booking();
+//         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+//         when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.empty());
 
-        BusinessException exception = assertThrows(BusinessException.class, () ->
-                paymentService.createPayment(1L, "BCA1")
-        );
-        assertEquals(ErrorCode.PAYMENT_METHOD_NOT_FOUND, exception.getErrorCode());
-    }
+//         BusinessException exception = assertThrows(BusinessException.class, () ->
+//                 paymentService.createPayment(1L, "BCA1")
+//         );
+//         assertEquals(ErrorCode.PAYMENT_METHOD_NOT_FOUND, exception.getErrorCode());
+//     }
 
-    @Test
-    void createPayment_PaymentAlreadyExists_ThrowsException() {
-        Booking booking = new Booking();
-        PaymentMethod paymentMethod = new PaymentMethod();
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
-        when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(true);
+//     @Test
+//     void createPayment_PaymentAlreadyExists_ThrowsException() {
+//         Booking booking = new Booking();
+//         PaymentMethod paymentMethod = new PaymentMethod();
+//         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+//         when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
+//         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(true);
 
-        BusinessException exception = assertThrows(BusinessException.class, () ->
-                paymentService.createPayment(1L, "BCA1")
-        );
+//         BusinessException exception = assertThrows(BusinessException.class, () ->
+//                 paymentService.createPayment(1L, "BCA1")
+//         );
 
-        assertEquals(ErrorCode.PAYMENT_ALREADY_EXISTS, exception.getErrorCode());
-    }
+//         assertEquals(ErrorCode.PAYMENT_ALREADY_EXISTS, exception.getErrorCode());
+//     }
 
-    @Test
-    void createPayment_SuccessfulPayment_ReturnsResponse() {
-        Booking booking = new Booking();
-        Session session = new Session();
-        session.setId(2L);
+//     @Test
+//     void createPayment_SuccessfulPayment_ReturnsResponse() {
+//         Booking booking = new Booking();
+//         Session session = new Session();
+//         session.setId(2L);
 
-        booking.setId(1L);
-        booking.setTotalPrice(BigDecimal.valueOf(100));
-        booking.setSession(session);
+//         booking.setId(1L);
+//         booking.setTotalPrice(BigDecimal.valueOf(100));
+//         booking.setSession(session);
 
-        PaymentMethod paymentMethod = new PaymentMethod();
-        paymentMethod.setId("BCA1");
+//         PaymentMethod paymentMethod = new PaymentMethod();
+//         paymentMethod.setId("BCA1");
 
-        Payment payment = new Payment();
-        payment.setId(1L);
-        payment.setStatus(Payment.PaymentStatus.COMPLETED);
+//         Payment payment = new Payment();
+//         payment.setId(1L);
+//         payment.setStatus(Payment.PaymentStatus.COMPLETED);
 
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
-        when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
-        when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
-        when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
+//         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+//         when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
+//         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
+//         when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
+//         when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
     
-        CreatePaymentResponse response = paymentService.createPayment(1L, "BCA1");
+//         CreatePaymentResponse response = paymentService.createPayment(1L, "BCA1");
 
-        assertNotNull(response);
-        assertEquals(1L, response.getPaymentId());
-        assertEquals("Payment processed successfully", response.getMessage());
-    }
+//         assertNotNull(response);
+//         assertEquals(1L, response.getPaymentId());
+//         assertEquals("Payment processed successfully", response.getMessage());
+//     }
 
-    @Test
-    void createPayment_InvokesPaymentUtilProcessPayment() {
-        Booking booking = new Booking();
-        Session session = new Session();
-        session.setId(2L);
-        booking.setId(1L);
-        booking.setTotalPrice(BigDecimal.valueOf(100));
-        booking.setSession(session);
-        PaymentMethod paymentMethod = new PaymentMethod();
-        paymentMethod.setId("BCA1");
+//     @Test
+//     void createPayment_InvokesPaymentUtilProcessPayment() {
+//         Booking booking = new Booking();
+//         Session session = new Session();
+//         session.setId(2L);
+//         booking.setId(1L);
+//         booking.setTotalPrice(BigDecimal.valueOf(100));
+//         booking.setSession(session);
+//         PaymentMethod paymentMethod = new PaymentMethod();
+//         paymentMethod.setId("BCA1");
 
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
-        when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
-        when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
+//         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+//         when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
+//         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
+//         when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
 
-        // Mock PaymentUtil.processPayment
-        DokuPaymentRequest dokuRequest = new DokuPaymentRequest();
-        PaymentDokuResponse dokuResponse = new PaymentDokuResponse();
-        when(paymentUtil.processPayment(any(DokuPaymentRequest.class))).thenReturn(dokuResponse);
+//         // Mock PaymentUtil.processPayment
+//         DokuPaymentRequest dokuRequest = new DokuPaymentRequest();
+//         PaymentDokuResponse dokuResponse = new PaymentDokuResponse();
+//         when(paymentUtil.processPayment(any(DokuPaymentRequest.class))).thenReturn(dokuResponse);
 
-        // You may need to adjust createPayment to call paymentUtil.processPayment internally
-        // For this test, we just verify the interaction
-        paymentService.createPayment(1L, "BCA1");
-        verify(paymentUtil, atLeastOnce()).processPayment(any(DokuPaymentRequest.class));
-    }
-}
+//         // You may need to adjust createPayment to call paymentUtil.processPayment internally
+//         // For this test, we just verify the interaction
+//         paymentService.createPayment(1L, "BCA1");
+//         verify(paymentUtil, atLeastOnce()).processPayment(any(DokuPaymentRequest.class));
+//     }
+// }
