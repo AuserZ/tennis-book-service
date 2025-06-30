@@ -11,6 +11,7 @@ import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.model.PaymentMethod;
 import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.model.User;
+import com.booking.tennisbook.model.DokuNotificationLog;
 import com.booking.tennisbook.repository.*;
 import com.booking.tennisbook.service.PaymentService;
 import com.booking.tennisbook.service.SessionService;
@@ -39,18 +40,20 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final UserRepository userRepository;
     private final PaymentUtil paymentUtil;
+    private final DokuNotificationLogRepository dokuNotificationLogRepository;
 
     @Autowired
     private final SessionService sessionService;
 
     public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,
-            SessionService sessionService, PaymentMethodRepository paymentMethodRepository, UserRepository userRepository, PaymentUtil paymentUtil) {
+            SessionService sessionService, PaymentMethodRepository paymentMethodRepository, UserRepository userRepository, PaymentUtil paymentUtil, DokuNotificationLogRepository dokuNotificationLogRepository) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.sessionService = sessionService;
         this.paymentMethodRepository = paymentMethodRepository;
         this.userRepository = userRepository;
         this.paymentUtil = paymentUtil;
+        this.dokuNotificationLogRepository = dokuNotificationLogRepository;
     }
 
     @Override
@@ -245,54 +248,78 @@ public class PaymentServiceImpl implements PaymentService {
     @Transactional
     public Map<String, Object> handleDokuNotification(Map<String, Object> payload, Map<String, String> headers) {
         logger.info("Received DOKU notification: " + payload);
+        String requestBody = payload.toString();
+        String responseBody = null;
+        String status = "FAILED";
+        String errorMessage = null;
+        try {
+            // Extract fields from payload
+            Map<String, Object> order = (Map<String, Object>) payload.get("order");
+            String invoiceNumber = order != null ? (String) order.get("invoice_number") : null;
+            String transactionStatus = (String) payload.get("transaction_status");
+            Object amountObj = order != null ? order.get("amount") : null;
+            String amount = amountObj != null ? amountObj.toString() : null;
+            String paymentMethod = (String) payload.get("payment_method");
+            String paymentDate = (String) payload.get("payment_date");
+            String signature = headers.getOrDefault("signature", null);
 
-        // Extract fields from payload
-        Map<String, Object> order = (Map<String, Object>) payload.get("order");
-        String invoiceNumber = order != null ? (String) order.get("invoice_number") : null;
-        String transactionStatus = (String) payload.get("transaction_status");
-        Object amountObj = order != null ? order.get("amount") : null;
-        String amount = amountObj != null ? amountObj.toString() : null;
-        String paymentMethod = (String) payload.get("payment_method");
-        String paymentDate = (String) payload.get("payment_date");
-        String signature = headers.getOrDefault("signature", null);
+            logger.info("Parsed notification - invoice_number: " + invoiceNumber + ", transaction_status: " + transactionStatus + ", amount: " + amount + ", payment_method: " + paymentMethod + ", payment_date: " + paymentDate);
 
-        logger.info("Parsed notification - invoice_number: " + invoiceNumber + ", transaction_status: " + transactionStatus + ", amount: " + amount + ", payment_method: " + paymentMethod + ", payment_date: " + paymentDate);
-
-        // (Optional) Validate signature if present
-        if (signature != null) {
-            // TODO: Implement signature validation if required by DOKU
-            logger.info("Signature provided: " + signature);
-        }
-
-        // Update payment status in DB
-        if (invoiceNumber != null) {
-            Payment payment = paymentRepository.findByTransactionId(invoiceNumber).orElse(null);
-            if (payment != null) {
-                payment.setStatus(transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? Payment.PaymentStatus.COMPLETED : Payment.PaymentStatus.FAILED);
-                payment.setProcessedAt(LocalDateTime.now());
-                paymentRepository.save(payment);
-                logger.info("Updated payment status for invoice " + invoiceNumber + ": " + payment.getStatus());
-
-                // If transaction_status == SUCCESS, mark booking as PAID and decrease participant count
-                if (transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS")) {
-                    Booking booking = payment.getBooking();
-                    if (booking != null) {
-                        booking.setStatus(Booking.BookingStatus.CONFIRMED);
-                        // Optionally decrease participant count here if your logic requires
-                        bookingRepository.save(booking);
-                        logger.info("Booking " + booking.getId() + " marked as CONFIRMED");
-                    }
-                }
-            } else {
-                logger.warn("No payment found for invoice_number: " + invoiceNumber);
+            // (Optional) Validate signature if present
+            if (signature != null) {
+                // TODO: Implement signature validation if required by DOKU
+                logger.info("Signature provided: " + signature);
             }
-        }
 
+            // Update payment status in DB
+            if (invoiceNumber != null) {
+                Payment payment = paymentRepository.findByTransactionId(invoiceNumber).orElse(null);
+                if (payment != null) {
+                    payment.setStatus(transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? Payment.PaymentStatus.COMPLETED : Payment.PaymentStatus.FAILED);
+                    payment.setProcessedAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
+                    logger.info("Updated payment status for invoice " + invoiceNumber + ": " + payment.getStatus());
+
+                    // If transaction_status == SUCCESS, mark booking as PAID and decrease participant count
+                    if (transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS")) {
+                        Booking booking = payment.getBooking();
+                        if (booking != null) {
+                            booking.setStatus(Booking.BookingStatus.CONFIRMED);
+                            // Decrease session participant left
+                            Session session = booking.getSession();
+                            if (session != null) {
+                                int newCurrent = session.getCurrentParticipants() + booking.getParticipants();
+                                session.setCurrentParticipants(newCurrent);
+                                logger.info("Session {} participants updated to {}", session.getId(), newCurrent);
+                            }
+                            bookingRepository.save(booking);
+                            logger.info("Booking {} marked as CONFIRMED", booking.getId());
+                        }
+                    }
+                    status = transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? "SUCCESS" : "FAILED";
+                } else {
+                    logger.warn("No payment found for invoice_number: " + invoiceNumber);
+                    errorMessage = "No payment found for invoice_number: " + invoiceNumber;
+                }
+            }
+            responseBody = "{\"status\":true,\"responseCode\":\"00\",\"responseMessage\":\"Notification received\"}";
+        } catch (Exception e) {
+            errorMessage = e.getMessage();
+            logger.error("Error handling DOKU notification", e);
+            responseBody = "{\"status\":false,\"responseCode\":\"99\",\"responseMessage\":\"Error: " + errorMessage + "\"}";
+        } finally {
+            DokuNotificationLog log = new DokuNotificationLog();
+            log.setRequestBody(requestBody);
+            log.setResponseBody(responseBody);
+            log.setStatus(status);
+            log.setErrorMessage(errorMessage);
+            dokuNotificationLogRepository.save(log);
+        }
         // Return the required response
         return Map.of(
-                "status", true,
-                "responseCode", "00",
-                "responseMessage", "Notification received"
+                "status", status.equals("SUCCESS"),
+                "responseCode", status.equals("SUCCESS") ? "00" : "99",
+                "responseMessage", status.equals("SUCCESS") ? "Notification received" : (errorMessage != null ? errorMessage : "Notification failed")
         );
     }
 

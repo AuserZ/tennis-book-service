@@ -36,32 +36,6 @@ public class PaymentController {
         this.bookingRepository = bookingRepository;
     }
 
-    // @PostMapping("/booking")
-    // public ResponseEntity<CreatePaymentResponse> createPayment(PaymentRequestBody requestBody) {
-
-    //     CreatePaymentResponse payment = paymentService.createPayment(requestBody.getBookingId(),
-    //             requestBody.getPaymentMethodId());
-    //     return ResponseEntity.ok(payment);
-    // }
-
-    @GetMapping("/{paymentId}")
-    public ResponseEntity<Payment> getPayment(@PathVariable Long paymentId) {
-        Payment payment = paymentService.getPayment(paymentId);
-        return ResponseEntity.ok(payment);
-    }
-
-    @GetMapping("/booking/{bookingId}")
-    public ResponseEntity<List<Payment>> getPaymentsByBooking(@PathVariable Long bookingId) {
-        List<Payment> payments = paymentService.getPaymentsByBooking(bookingId);
-        return ResponseEntity.ok(payments);
-    }
-
-    @PostMapping("/{paymentId}/refund")
-    public ResponseEntity<Payment> refundPayment(@PathVariable Long paymentId) {
-        Payment payment = paymentService.refundPayment(paymentId);
-        return ResponseEntity.ok(payment);
-    }
-
     @PostMapping("/new")
     public ResponseEntity<?> newPaymentDoku(@RequestBody PaymentRequestBody request) {
         logger.info("[START] New Payment Doku");

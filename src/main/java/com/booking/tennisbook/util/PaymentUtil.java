@@ -41,12 +41,15 @@ import java.time.ZoneOffset;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import com.booking.tennisbook.model.PaymentDokuLog;
+import com.booking.tennisbook.repository.PaymentDokuLogRepository;
 
 @Component
 public class PaymentUtil {
     Logger logger = LoggerFactory.getLogger(PaymentUtil.class);
 
     private final PaymentMethodRepository paymentMethodRepository;
+    private final PaymentDokuLogRepository paymentDokuLogRepository;
 
     @Value("${doku.payment.api}")
     private String dokuPaymentApi;
@@ -65,11 +68,12 @@ public class PaymentUtil {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    public PaymentUtil(PaymentMethodRepository paymentMethodRepository) {
+    public PaymentUtil(PaymentMethodRepository paymentMethodRepository, PaymentDokuLogRepository paymentDokuLogRepository) {
         this.paymentMethodRepository = paymentMethodRepository;
         this.webClient = WebClient.builder().build();
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
+        this.paymentDokuLogRepository = paymentDokuLogRepository;
     }
 
     public DokuPaymentRequest buildDokuRequest(Booking booking, User user) {
@@ -123,14 +127,18 @@ public class PaymentUtil {
         long startTime = System.currentTimeMillis();
         logger.info("[START] Processing DOKU Checkout payment request");
 
+        String requestBody = null;
+        String responseBody = null;
+        String status = "FAILED";
+        String errorMessage = null;
         try {
-            String minifiedJson = objectMapper.writeValueAsString(paymentRequest);
+            requestBody = objectMapper.writeValueAsString(paymentRequest);
             String requestId = generateRequestId();
             String timestamp = ZonedDateTime.now(ZoneOffset.UTC)
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-            String signature = createCheckoutSignature(dokuClientId, requestId, timestamp, minifiedJson);
+            String signature = createCheckoutSignature(dokuClientId, requestId, timestamp, requestBody);
 
-            String responseBody = webClient.post()
+            responseBody = webClient.post()
                     .uri(dokuPaymentApi)
                     .header("Client-Id", dokuClientId)
                     .header("Request-Id", requestId)
@@ -148,20 +156,32 @@ public class PaymentUtil {
 
             if (responseBody == null || responseBody.isBlank()) {
                 logger.error("DOKU returned an empty response body!");
-                throw new RuntimeException("DOKU returned an empty response body!");
+                errorMessage = "DOKU returned an empty response body!";
+                throw new RuntimeException(errorMessage);
             }
 
             try {
-                return objectMapper.readValue(responseBody, PaymentDokuResponse.class);
+                PaymentDokuResponse result = objectMapper.readValue(responseBody, PaymentDokuResponse.class);
+                status = "SUCCESS";
+                return result;
             } catch (Exception parseEx) {
                 logger.error("Jackson parsing error: ", parseEx);
                 logger.error("DOKU error or unexpected response: {}", responseBody);
-                throw new RuntimeException("DOKU error or unexpected response: " + responseBody);
+                errorMessage = "DOKU error or unexpected response: " + responseBody;
+                throw new RuntimeException(errorMessage);
             }
         } catch (Exception e) {
             long endTime = System.currentTimeMillis();
             logger.error("[ERROR] Failed to process DOKU Checkout payment after {}ms", (endTime - startTime), e);
-            throw new RuntimeException("Exception: " + e.getMessage(), e);
+            errorMessage = e.getMessage();
+            throw new RuntimeException("Exception: " + errorMessage, e);
+        } finally {
+            PaymentDokuLog log = new PaymentDokuLog();
+            log.setRequestBody(requestBody);
+            log.setResponseBody(responseBody);
+            log.setStatus(status);
+            log.setErrorMessage(errorMessage);
+            paymentDokuLogRepository.save(log);
         }
     }
 
