@@ -67,156 +67,63 @@ public class PaymentUtil {
     }
 
     public DokuPaymentRequest buildDokuRequest(Booking booking, User user) {
-
         logger.info("[START] Building DOKU payment request for booking ID: {}, user ID: {}", booking.getId(),
                 user.getId());
 
-        // --- BEGIN: Commented out original full request builder ---
-        /*
-         * DokuPaymentRequest dokuPaymentRequest = new DokuPaymentRequest();
-         * 
-         * logger.info("[START] Building order data for booking ID: {}",
-         * booking.getId());
-         * OrderDoku orderDoku = new OrderDoku();
-         * orderDoku.setAmount(booking.getTotalPrice());
-         * orderDoku.setInvoiceNumber(invoiceBuilder(booking));
-         * orderDoku.setCurrency("IDR");
-         * logger.info("[END] Order data built - Amount: {}, Invoice: {}, Currency: {}",
-         * booking.getTotalPrice(), orderDoku.getInvoiceNumber(),
-         * orderDoku.getCurrency());
-         * 
-         * // logger.info("[START] Building line items for session ID: {}",
-         * booking.getSession().getId());
-         * // List<LineItemsDoku> lineItems = new ArrayList<>();
-         * // LineItemsDoku bookingSession = new
-         * LineItemsDoku(booking.getSession().getId(),
-         * booking.getSession().getCoach().getName(),
-         * booking.getSession().getTennisField().getName(),
-         * booking.getSession().getStartTime(), booking.getSession().getEndTime(),
-         * booking.getSession().getDate(),booking.getSession().getType(),
-         * booking.getParticipants(), booking.getTotalPrice(), "service");
-         * // logger.
-         * info("[END] Line items built - Session: {}, Coach: {}, Field: {}, Type: {}, Participants: {}"
-         * ,
-         * // booking.getSession().getId(), booking.getSession().getCoach().getName(),
-         * // booking.getSession().getTennisField().getName(),
-         * booking.getSession().getType(),
-         * // booking.getParticipants());
-         * 
-         * // lineItems.add(bookingSession);
-         * // orderDoku.setLineItems(lineItems);
-         * logger.info("[END] Order building completed");
-         * 
-         * logger.info("[START] Building payment configuration");
-         * PaymentDoku paymentDoku = new PaymentDoku();
-         * paymentDoku.setPayment_due_date(10);
-         * paymentDoku.setType("SALE");
-         * 
-         * List<PaymentMethod> paymentMethods = paymentMethodRepository.findAll();
-         * List<String> paymentMethodTypes = paymentMethods.stream()
-         * .filter(method -> method.getPaymentMethodType() != null)
-         * .map(method -> method.getPaymentMethodType().name())
-         * .toList();
-         * 
-         * paymentDoku.setPayment_method_types(paymentMethodTypes);
-         * logger.
-         * info("[END] Payment configuration built - Due date: {}, Type: {}, Available methods: {}"
-         * ,
-         * paymentDoku.getPayment_due_date(), paymentDoku.getType(),
-         * paymentMethodTypes.size());
-         * 
-         * logger.info("[START] Building customer details for user: {}",
-         * user.getEmail());
-         * CustomerDetails customerDetails = new CustomerDetails();
-         * customerDetails.setId(user.getId());
-         * customerDetails.setEmail(user.getEmail());
-         * customerDetails.setName(user.getName());
-         * logger.info("[END] Customer details built - ID: {}, Email: {}, Name: {}",
-         * customerDetails.getId(), customerDetails.getEmail(),
-         * customerDetails.getName());
-         * 
-         * dokuPaymentRequest.setOrder(orderDoku);
-         * dokuPaymentRequest.setPayment(paymentDoku);
-         * dokuPaymentRequest.setCustomer(customerDetails);
-         */
-        // --- END: Commented out original full request builder ---
+        DokuPaymentRequest dokuPaymentRequest = new DokuPaymentRequest();
 
-        // For now, let's use a simple basic request structure as per DOKU documentation
-        DokuPaymentRequest dokuPaymentRequest = createBasicDokuRequest(booking);
+        logger.info("[START] Building order data for booking ID: {}", booking.getId());
+        OrderDoku orderDoku = new OrderDoku();
+        orderDoku.setAmount(booking.getTotalPrice().intValue());
+        orderDoku.setInvoice_number(invoiceBuilder(booking));
+        orderDoku.setCurrency("IDR");
+        logger.info("[END] Order data built - Amount: {}, Invoice: {}, Currency: {}",
+                booking.getTotalPrice(), orderDoku.getInvoice_number(), orderDoku.getCurrency());
+
+        // Optionally add line items if needed (uncomment and adjust as required)
+        // List<LineItemsDoku> lineItems = new ArrayList<>();
+        // LineItemsDoku bookingSession = new
+        // LineItemsDoku(booking.getSession().getId(),
+        // booking.getSession().getCoach().getName(),
+        // booking.getSession().getTennisField().getName(),
+        // booking.getSession().getStartTime(), booking.getSession().getEndTime(),
+        // booking.getSession().getDate(), booking.getSession().getType(),
+        // booking.getParticipants(), booking.getTotalPrice(), "service");
+        // lineItems.add(bookingSession);
+        // orderDoku.setLineItems(lineItems);
+        logger.info("[END] Order building completed");
+
+        logger.info("[START] Building payment configuration");
+        PaymentDoku paymentDoku = new PaymentDoku();
+        paymentDoku.setPayment_due_date(10);
+        paymentDoku.setType("SALE");
+
+        List<PaymentMethod> paymentMethods = paymentMethodRepository.findAll();
+        List<String> paymentMethodTypes = paymentMethods.stream()
+                .filter(method -> method.getPaymentMethodType() != null)
+                .map(method -> method.getPaymentMethodType().name())
+                .toList();
+
+        paymentDoku.setPayment_method_types(paymentMethodTypes);
+        logger.info("[END] Payment configuration built - Due date: {}, Type: {}, Available methods: {}",
+                paymentDoku.getPayment_due_date(), paymentDoku.getType(), paymentMethodTypes.size());
+
+        logger.info("[START] Building customer details for user: {}", user.getEmail());
+        CustomerDetails customerDetails = new CustomerDetails();
+        customerDetails.setId(user.getId());
+        customerDetails.setEmail(user.getEmail());
+        customerDetails.setName(user.getName());
+        logger.info("[END] Customer details built - ID: {}, Email: {}, Name: {}",
+                customerDetails.getId(), customerDetails.getEmail(), customerDetails.getName());
+
+        dokuPaymentRequest.setOrder(orderDoku);
+        dokuPaymentRequest.setPayment(paymentDoku);
+        dokuPaymentRequest.setCustomer(customerDetails);
 
         logger.info("[END] DOKU payment request built successfully for booking ID: {}", booking.getId());
 
         return dokuPaymentRequest;
     }
-
-    private DokuPaymentRequest createBasicDokuRequest(Booking booking) {
-        logger.info("Creating basic DOKU request structure");
-
-        DokuPaymentRequest request = new DokuPaymentRequest();
-
-        // Create order with basic structure
-        OrderDoku order = new OrderDoku();
-        order.setAmount(booking.getTotalPrice().setScale(0, RoundingMode.HALF_UP).intValue());
-        order.setInvoice_number(invoiceBuilder(booking));
-        // Note: Not setting lineItems for basic request
-
-        // Create payment with basic structure
-        PaymentDoku payment = new PaymentDoku();
-        payment.setPayment_due_date(60); // 60 minutes as per basic request
-        // Note: Not setting payment_method_types for basic request
-
-        request.setOrder(order);
-        request.setPayment(payment);
-        // Note: Not setting customer for basic request
-
-        logger.info("Basic DOKU request created - Amount: {}, Invoice: {}, Due Date: {}",
-                order.getAmount(), order.getInvoice_number(), payment.getPayment_due_date());
-
-        return request;
-    }
-
-    // Commented out the old processPayment method
-    /*
-     * public PaymentDokuResponse processPayment(DokuPaymentRequest paymentRequest)
-     * {
-     * long startTime = System.currentTimeMillis();
-     * logger.info("[START] Processing DOKU payment request");
-     * 
-     * try {
-     * logger.debug("Serializing payment request to JSON");
-     * String minifiedJson = objectMapper.writeValueAsString(paymentRequest);
-     * logger.debug("Payment request JSON: {}", minifiedJson);
-     * 
-     * logger.info("Fetching DOKU access token");
-     * String accessToken = fetchAccessToken();
-     * logger.debug("Access token retrieved successfully");
-     * 
-     * logger.info("Generating timestamp for request");
-     * String timestamp = generateTimestamp();
-     * logger.debug("Timestamp generated: {}", timestamp);
-     * 
-     * logger.info("Creating request signature");
-     * String signature = createSignature(minifiedJson, accessToken, timestamp);
-     * logger.debug("Signature created successfully");
-     * 
-     * logger.info("Executing payment request to DOKU API");
-     * PaymentDokuResponse response = executePaymentRequest(minifiedJson,
-     * accessToken, timestamp, signature);
-     * 
-     * long endTime = System.currentTimeMillis();
-     * logger.info("[END] DOKU payment processed successfully in {}ms", (endTime -
-     * startTime));
-     * logger.debug("Payment response: {}", response);
-     * 
-     * return response;
-     * } catch (Exception e) {
-     * long endTime = System.currentTimeMillis();
-     * logger.error("[ERROR] Failed to process DOKU payment after {}ms", (endTime -
-     * startTime), e);
-     * throw new RuntimeException("Failed to process DOKU payment", e);
-     * }
-     * }
-     */
 
     public PaymentDokuResponse processPaymentCheckout(DokuPaymentRequest paymentRequest) {
         long startTime = System.currentTimeMillis();
@@ -399,21 +306,17 @@ public class PaymentUtil {
 
         invoiceNumber.append("INV-");
         invoiceNumber.append(booking.getId() + "-");
-        invoiceNumber.append(booking.getSession().getType() + "-");
+        invoiceNumber.append(sessionTypeConverter(booking.getSession().getType()) + "-");
         invoiceNumber.append(booking.getSession().getId());
+        invoiceNumber.append(UUID.randomUUID());
 
         String result = invoiceNumber.toString();
         logger.debug("Generated invoice number: {} for booking ID: {}", result, booking.getId());
         return result;
     }
 
-    public String sessionTypeConverter(String type) throws Exception {
+    public String sessionTypeConverter(String type) {
         logger.debug("Converting session type: {}", type);
-
-        if (isEmpty(type)) {
-            logger.error("Session type is empty or null");
-            throw new Exception("Session type cannot be empty");
-        }
 
         String result = type.equals("Private") ? "PRV" : "PBL";
         logger.debug("Converted session type from '{}' to '{}'", type, result);
