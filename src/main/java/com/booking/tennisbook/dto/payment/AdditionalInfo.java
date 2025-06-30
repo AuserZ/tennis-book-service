@@ -1,5 +1,6 @@
 package com.booking.tennisbook.dto.payment;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,5 +11,6 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AdditionalInfo {
+    @JsonProperty("origin")
     private OriginData origin;
 } 

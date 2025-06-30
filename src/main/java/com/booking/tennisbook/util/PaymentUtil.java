@@ -245,11 +245,17 @@ public class PaymentUtil {
 
             long endTime = System.currentTimeMillis();
             logger.info("[END] DOKU Checkout payment processed in {}ms", (endTime - startTime));
+            logger.info("Raw response: {}", responseBody);
 
-            // Try to parse as PaymentDokuResponse, otherwise print and throw
+            if (responseBody == null || responseBody.isBlank()) {
+                logger.error("DOKU returned an empty response body!");
+                throw new RuntimeException("DOKU returned an empty response body!");
+            }
+
             try {
                 return objectMapper.readValue(responseBody, PaymentDokuResponse.class);
             } catch (Exception parseEx) {
+                logger.error("Jackson parsing error: ", parseEx);
                 logger.error("DOKU error or unexpected response: {}", responseBody);
                 throw new RuntimeException("DOKU error or unexpected response: " + responseBody);
             }
