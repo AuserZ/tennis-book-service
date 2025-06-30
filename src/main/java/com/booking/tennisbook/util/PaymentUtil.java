@@ -65,6 +65,9 @@ public class PaymentUtil {
     public DokuPaymentRequest buildDokuRequest(Booking booking, User user){
         
         logger.info("[START] Building DOKU payment request for booking ID: {}, user ID: {}", booking.getId(), user.getId());
+        
+        // --- BEGIN: Commented out original full request builder ---
+        /*
         DokuPaymentRequest dokuPaymentRequest = new DokuPaymentRequest();
 
         logger.info("[START] Building order data for booking ID: {}", booking.getId());
@@ -113,10 +116,41 @@ public class PaymentUtil {
         dokuPaymentRequest.setOrder(orderDoku);
         dokuPaymentRequest.setPayment(paymentDoku);
         dokuPaymentRequest.setCustomer(customerDetails);
+        */
+        // --- END: Commented out original full request builder ---
+
+        // For now, let's use a simple basic request structure as per DOKU documentation
+        DokuPaymentRequest dokuPaymentRequest = createBasicDokuRequest(booking);
         
         logger.info("[END] DOKU payment request built successfully for booking ID: {}", booking.getId());
 
         return dokuPaymentRequest;
+    }
+
+    private DokuPaymentRequest createBasicDokuRequest(Booking booking) {
+        logger.info("Creating basic DOKU request structure");
+        
+        DokuPaymentRequest request = new DokuPaymentRequest();
+        
+        // Create order with basic structure
+        OrderDoku order = new OrderDoku();
+        order.setAmount(booking.getTotalPrice());
+        order.setInvoiceNumber(invoiceBuilder(booking));
+        // Note: Not setting lineItems for basic request
+        
+        // Create payment with basic structure
+        PaymentDoku payment = new PaymentDoku();
+        payment.setPayment_due_date(60); // 60 minutes as per basic request
+        // Note: Not setting payment_method_types for basic request
+        
+        request.setOrder(order);
+        request.setPayment(payment);
+        // Note: Not setting customer for basic request
+        
+        logger.info("Basic DOKU request created - Amount: {}, Invoice: {}, Due Date: {}", 
+                   order.getAmount(), order.getInvoiceNumber(), payment.getPayment_due_date());
+        
+        return request;
     }
 
     // Commented out the old processPayment method
