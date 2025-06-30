@@ -57,8 +57,7 @@ public class PaymentController {
     @PostMapping("/new")
     public ResponseEntity<?> newPaymentDoku(@RequestBody PaymentRequestBody request) {
         logger.info("[START] New Payment Doku");
-        PaymentDokuResponse payment = paymentService.createPaymentDoku(request.getBookingId(),
-                request.getPaymentMethodId());
+        PaymentDokuResponse payment = paymentService.createPaymentDoku(request.getBookingId());
 
         if (isEmpty(payment))
             throw new BusinessException(ErrorCode.PAYMENT_FAILED);

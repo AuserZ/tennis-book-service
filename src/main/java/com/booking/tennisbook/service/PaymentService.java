@@ -13,5 +13,5 @@ public interface PaymentService {
     List<Payment> getPaymentsByBooking(Long bookingId);
     Payment refundPayment(Long paymentId);
     PaymentMethod getPaymentMethod(String paymentMethodId);
-    PaymentDokuResponse createPaymentDoku(Long bookingId, String paymentMethodId);
+    PaymentDokuResponse createPaymentDoku(Long bookingId);
 } 

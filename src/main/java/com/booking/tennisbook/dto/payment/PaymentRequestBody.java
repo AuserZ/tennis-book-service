@@ -9,7 +9,4 @@ import lombok.*;
 public class PaymentRequestBody {
     @NonNull
     private Long bookingId;
-
-    @NonNull
-    private String paymentMethodId;
 }

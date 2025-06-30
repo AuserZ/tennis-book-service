@@ -160,7 +160,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentDokuResponse createPaymentDoku(Long bookingId, String paymentMethodId) {
+    public PaymentDokuResponse createPaymentDoku(Long bookingId) {
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
