@@ -228,6 +228,12 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessException(ErrorCode.PAYMENT_FAILED);
         }
         logger.debug("DOKU payment request built successfully");
+
+        // Set invoice number in booking before calling DOKU
+        String invoiceNumber = paymentRequest.getOrder().getInvoice_number();
+        booking.setInvoiceNumber(invoiceNumber);
+        bookingRepository.save(booking);
+        logger.info("Set invoice number {} in booking {}", invoiceNumber, booking.getId());
         
         logger.info("Processing DOKU payment request");
         // Request Payment
@@ -292,36 +298,25 @@ public class PaymentServiceImpl implements PaymentService {
                 logger.info("Signature provided: " + signature);
             }
 
-            // Update payment status in DB
-            if (invoiceNumber != null) {
-                Payment payment = paymentRepository.findByTransactionId(invoiceNumber).orElse(null);
-                if (payment != null) {
-                    payment.setStatus(transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? Payment.PaymentStatus.COMPLETED : Payment.PaymentStatus.FAILED);
-                    payment.setProcessedAt(LocalDateTime.now());
-                    paymentRepository.save(payment);
-                    logger.info("Updated payment status for invoice " + invoiceNumber + ": " + payment.getStatus());
-
-                    // If transaction_status == SUCCESS, mark booking as PAID and decrease participant count
-                    if (transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS")) {
-                        Booking booking = payment.getBooking();
-                        if (booking != null) {
-                            booking.setStatus(Booking.BookingStatus.CONFIRMED);
-                            // Decrease session participant left
-                            Session session = booking.getSession();
-                            if (session != null) {
-                                int newCurrent = session.getCurrentParticipants() + booking.getParticipants();
-                                session.setCurrentParticipants(newCurrent);
-                                logger.info("Session {} participants updated to {}", session.getId(), newCurrent);
-                            }
-                            bookingRepository.save(booking);
-                            logger.info("Booking {} marked as CONFIRMED", booking.getId());
-                        }
+            // Use invoice number to find booking and session
+            Booking booking = bookingRepository.findByInvoiceNumber(invoiceNumber).orElse(null);
+            if (booking != null) {
+                // Update session participants if transaction is successful
+                if (transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS")) {
+                    Session session = booking.getSession();
+                    if (session != null) {
+                        int newCurrent = session.getCurrentParticipants() + booking.getParticipants();
+                        session.setCurrentParticipants(newCurrent);
+                        logger.info("Session {} participants updated to {}", session.getId(), newCurrent);
                     }
-                    status = transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? "SUCCESS" : "FAILED";
-                } else {
-                    logger.warn("No payment found for invoice_number: " + invoiceNumber);
-                    errorMessage = "No payment found for invoice_number: " + invoiceNumber;
+                    booking.setStatus(Booking.BookingStatus.CONFIRMED);
+                    bookingRepository.save(booking);
+                    logger.info("Booking {} marked as CONFIRMED", booking.getId());
                 }
+                status = transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? "SUCCESS" : "FAILED";
+            } else {
+                logger.warn("No booking found for invoice_number: " + invoiceNumber);
+                errorMessage = "No booking found for invoice_number: " + invoiceNumber;
             }
             responseBody = "{\"status\":true,\"responseCode\":\"00\",\"responseMessage\":\"Notification received\"}";
         } catch (Exception e) {
@@ -334,6 +329,7 @@ public class PaymentServiceImpl implements PaymentService {
             log.setResponseBody(responseBody);
             log.setStatus(status);
             log.setErrorMessage(errorMessage);
+            log.setInvoiceNumber(payload.containsKey("order") ? ((Map<String, Object>)payload.get("order")).get("invoice_number").toString() : null);
             dokuNotificationLogRepository.save(log);
         }
         // Return the required response

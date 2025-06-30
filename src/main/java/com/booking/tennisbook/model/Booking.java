@@ -44,6 +44,9 @@ public class Booking {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(unique = true)
+    private String invoiceNumber;
+
     public enum BookingStatus {
         PENDING,
         CONFIRMED,

@@ -31,6 +31,9 @@ public class PaymentDokuLog {
     @Column
     private String errorMessage;
 
+    @Column
+    private String invoiceNumber;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
