@@ -238,8 +238,6 @@ public class PaymentUtil {
                     .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                     .bodyValue(paymentRequest)
                     .retrieve()
-                    .onStatus(status -> true, clientResponse -> clientResponse.bodyToMono(String.class)
-                            .doOnNext(body -> logger.info("DOKU API response body: {}", body)).then(Mono.empty()))
                     .bodyToMono(String.class)
                     .block();
 
