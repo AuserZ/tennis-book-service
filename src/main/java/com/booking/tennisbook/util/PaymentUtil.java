@@ -25,6 +25,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -154,7 +156,7 @@ public class PaymentUtil {
 
         // Create order with basic structure
         OrderDoku order = new OrderDoku();
-        order.setAmount(booking.getTotalPrice());
+        order.setAmount(booking.getTotalPrice().setScale(0, RoundingMode.HALF_UP).intValue());
         order.setInvoice_number(invoiceBuilder(booking));
         // Note: Not setting lineItems for basic request
 
@@ -228,21 +230,18 @@ public class PaymentUtil {
             String signature = createCheckoutSignature(dokuClientId, requestId, timestamp, minifiedJson);
 
             String responseBody = webClient.post()
-                .uri(dokuPaymentApi)
-                .header("Client-Id", dokuClientId)
-                .header("Request-Id", requestId)
-                .header("Request-Timestamp", timestamp)
-                .header("Signature", signature)
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .bodyValue(paymentRequest)
-                .retrieve()
-                .onStatus(status -> true, clientResponse ->
-                    clientResponse.bodyToMono(String.class).doOnNext(body ->
-                        logger.info("DOKU API response body: {}", body)
-                    ).then(Mono.empty())
-                )
-                .bodyToMono(String.class)
-                .block();
+                    .uri(dokuPaymentApi)
+                    .header("Client-Id", dokuClientId)
+                    .header("Request-Id", requestId)
+                    .header("Request-Timestamp", timestamp)
+                    .header("Signature", signature)
+                    .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                    .bodyValue(paymentRequest)
+                    .retrieve()
+                    .onStatus(status -> true, clientResponse -> clientResponse.bodyToMono(String.class)
+                            .doOnNext(body -> logger.info("DOKU API response body: {}", body)).then(Mono.empty()))
+                    .bodyToMono(String.class)
+                    .block();
 
             long endTime = System.currentTimeMillis();
             logger.info("[END] DOKU Checkout payment processed in {}ms", (endTime - startTime));
