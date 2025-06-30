@@ -25,4 +25,6 @@ public class PaymentData {
     private String expiredDate;
     @JsonProperty("expired_datetime")
     private String expiredDatetime;
+    @JsonProperty("type")
+    private String type;
 } 
