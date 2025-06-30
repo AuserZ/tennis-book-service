@@ -155,7 +155,7 @@ public class PaymentUtil {
         // Create order with basic structure
         OrderDoku order = new OrderDoku();
         order.setAmount(booking.getTotalPrice());
-        order.setInvoiceNumber(invoiceBuilder(booking));
+        order.setInvoice_number(invoiceBuilder(booking));
         // Note: Not setting lineItems for basic request
 
         // Create payment with basic structure
@@ -168,7 +168,7 @@ public class PaymentUtil {
         // Note: Not setting customer for basic request
 
         logger.info("Basic DOKU request created - Amount: {}, Invoice: {}, Due Date: {}",
-                order.getAmount(), order.getInvoiceNumber(), payment.getPayment_due_date());
+                order.getAmount(), order.getInvoice_number(), payment.getPayment_due_date());
 
         return request;
     }
@@ -234,7 +234,7 @@ public class PaymentUtil {
                 .header("Request-Timestamp", timestamp)
                 .header("Signature", signature)
                 .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .bodyValue(minifiedJson)
+                .bodyValue(paymentRequest)
                 .retrieve()
                 .onStatus(status -> true, clientResponse ->
                     clientResponse.bodyToMono(String.class).doOnNext(body ->
@@ -246,7 +246,6 @@ public class PaymentUtil {
 
             long endTime = System.currentTimeMillis();
             logger.info("[END] DOKU Checkout payment processed in {}ms", (endTime - startTime));
-            logger.info("Response from DOKU IS: {}", responseBody);
 
             // Try to parse as PaymentDokuResponse, otherwise print and throw
             try {

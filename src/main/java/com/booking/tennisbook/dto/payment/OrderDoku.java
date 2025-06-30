@@ -14,7 +14,7 @@ import lombok.ToString;
 @NoArgsConstructor
 public class OrderDoku {
     private BigDecimal amount;
-    private String invoiceNumber;
+    private String invoice_number;
     // private List<LineItemsDoku> lineItems;
     private String currency;
     
