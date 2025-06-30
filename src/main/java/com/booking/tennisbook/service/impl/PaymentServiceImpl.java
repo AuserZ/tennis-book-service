@@ -253,14 +253,35 @@ public class PaymentServiceImpl implements PaymentService {
         String status = "FAILED";
         String errorMessage = null;
         try {
-            // Extract fields from payload
-            Map<String, Object> order = (Map<String, Object>) payload.get("order");
-            String invoiceNumber = order != null ? (String) order.get("invoice_number") : null;
-            String transactionStatus = (String) payload.get("transaction_status");
-            Object amountObj = order != null ? order.get("amount") : null;
-            String amount = amountObj != null ? amountObj.toString() : null;
-            String paymentMethod = (String) payload.get("payment_method");
-            String paymentDate = (String) payload.get("payment_date");
+            // Support both SNAP and Non-SNAP (VA) notification formats
+            String invoiceNumber = null;
+            String transactionStatus = null;
+            String amount = null;
+            String paymentMethod = null;
+            String paymentDate = null;
+
+            // Non-SNAP: has 'transaction' object with 'status', SNAP: has 'transaction_status' at root
+            if (payload.containsKey("transaction")) {
+                // Non-SNAP format
+                Map<String, Object> transaction = (Map<String, Object>) payload.get("transaction");
+                transactionStatus = transaction != null ? (String) transaction.get("status") : null;
+                paymentDate = transaction != null ? (String) transaction.get("date") : null;
+                Map<String, Object> order = (Map<String, Object>) payload.get("order");
+                invoiceNumber = order != null ? (String) order.get("invoice_number") : null;
+                Object amountObj = order != null ? order.get("amount") : null;
+                amount = amountObj != null ? amountObj.toString() : null;
+                paymentMethod = payload.containsKey("payment_method") ? (String) payload.get("payment_method") : null;
+            } else {
+                // SNAP format (default)
+                Map<String, Object> order = (Map<String, Object>) payload.get("order");
+                invoiceNumber = order != null ? (String) order.get("invoice_number") : null;
+                transactionStatus = (String) payload.get("transaction_status");
+                Object amountObj = order != null ? order.get("amount") : null;
+                amount = amountObj != null ? amountObj.toString() : null;
+                paymentMethod = (String) payload.get("payment_method");
+                paymentDate = (String) payload.get("payment_date");
+            }
+
             String signature = headers.getOrDefault("signature", null);
 
             logger.info("Parsed notification - invoice_number: " + invoiceNumber + ", transaction_status: " + transactionStatus + ", amount: " + amount + ", payment_method: " + paymentMethod + ", payment_date: " + paymentDate);
