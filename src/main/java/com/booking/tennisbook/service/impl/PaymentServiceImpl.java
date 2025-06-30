@@ -27,6 +27,7 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -240,6 +241,61 @@ public class PaymentServiceImpl implements PaymentService {
         logger.debug("DOKU payment response: {}", response);
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> handleDokuNotification(Map<String, Object> payload, Map<String, String> headers) {
+        logger.info("Received DOKU notification: " + payload);
+
+        // Extract fields from payload
+        Map<String, Object> order = (Map<String, Object>) payload.get("order");
+        String invoiceNumber = order != null ? (String) order.get("invoice_number") : null;
+        String transactionStatus = (String) payload.get("transaction_status");
+        Object amountObj = order != null ? order.get("amount") : null;
+        String amount = amountObj != null ? amountObj.toString() : null;
+        String paymentMethod = (String) payload.get("payment_method");
+        String paymentDate = (String) payload.get("payment_date");
+        String signature = headers.getOrDefault("signature", null);
+
+        logger.info("Parsed notification - invoice_number: " + invoiceNumber + ", transaction_status: " + transactionStatus + ", amount: " + amount + ", payment_method: " + paymentMethod + ", payment_date: " + paymentDate);
+
+        // (Optional) Validate signature if present
+        if (signature != null) {
+            // TODO: Implement signature validation if required by DOKU
+            logger.info("Signature provided: " + signature);
+        }
+
+        // Update payment status in DB
+        if (invoiceNumber != null) {
+            Payment payment = paymentRepository.findByTransactionId(invoiceNumber).orElse(null);
+            if (payment != null) {
+                payment.setStatus(transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS") ? Payment.PaymentStatus.COMPLETED : Payment.PaymentStatus.FAILED);
+                payment.setProcessedAt(LocalDateTime.now());
+                paymentRepository.save(payment);
+                logger.info("Updated payment status for invoice " + invoiceNumber + ": " + payment.getStatus());
+
+                // If transaction_status == SUCCESS, mark booking as PAID and decrease participant count
+                if (transactionStatus != null && transactionStatus.equalsIgnoreCase("SUCCESS")) {
+                    Booking booking = payment.getBooking();
+                    if (booking != null) {
+                        booking.setStatus(Booking.BookingStatus.CONFIRMED);
+                        // Optionally decrease participant count here if your logic requires
+                        bookingRepository.save(booking);
+                        logger.info("Booking " + booking.getId() + " marked as CONFIRMED");
+                    }
+                }
+            } else {
+                logger.warn("No payment found for invoice_number: " + invoiceNumber);
+            }
+        }
+
+        // Return the required response
+        return Map.of(
+                "status", true,
+                "responseCode", "00",
+                "responseMessage", "Notification received"
+        );
     }
 
 }
