@@ -2,13 +2,22 @@ package com.booking.tennisbook.config;
 
 import com.booking.tennisbook.enums.PaymentEnums;
 import com.booking.tennisbook.model.PaymentMethod;
+import com.booking.tennisbook.model.Session;
+import com.booking.tennisbook.model.Coach;
+import com.booking.tennisbook.model.TennisField;
 import com.booking.tennisbook.repository.PaymentMethodRepository;
+import com.booking.tennisbook.repository.SessionRepository;
+import com.booking.tennisbook.repository.CoachRepository;
+import com.booking.tennisbook.repository.TennisFieldRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Component
 @Order(1) // Run first
@@ -18,6 +27,15 @@ public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private PaymentMethodRepository paymentMethodRepository;
+
+    @Autowired
+    private SessionRepository sessionRepository;
+
+    @Autowired
+    private CoachRepository coachRepository;
+
+    @Autowired
+    private TennisFieldRepository tennisFieldRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -29,6 +47,14 @@ public class DataSeeder implements CommandLineRunner {
             logger.info("Payment methods seeded successfully!");
         } else {
             logger.info("Data already exists, skipping seeder.");
+        }
+
+        // Session data
+        if (sessionRepository.count() == 0) {
+            seedSessions();
+            logger.info("Sessions seeded successfully!");
+        } else {
+            logger.info("Session data already exists, skipping seeder.");
         }
     }
 
@@ -160,5 +186,40 @@ public class DataSeeder implements CommandLineRunner {
         paymentMethod.setDescription(description);
         paymentMethod.setIsActive(true);
         return paymentMethodRepository.save(paymentMethod);
+    }
+
+    private void seedSessions() {
+        // Create or fetch a coach
+        Coach coach = coachRepository.findAll().stream().findFirst().orElseGet(() -> {
+            Coach c = new Coach();
+            c.setName("John Doe");
+            c.setPhoneNumber("08123456789");
+            c.setBio("Professional tennis coach");
+            return coachRepository.save(c);
+        });
+        // Create or fetch a tennis field
+        TennisField field = tennisFieldRepository.findAll().stream().findFirst().orElseGet(() -> {
+            TennisField f = new TennisField();
+            f.setName("Central Court");
+            f.setLocation("Jakarta");
+            f.setPhotoUrl("https://example.com/field.jpg");
+            return tennisFieldRepository.save(f);
+        });
+        // Seed a few sessions
+        for (int i = 0; i < 3; i++) {
+            Session session = new Session();
+            session.setCoach(coach);
+            session.setTennisField(field);
+            session.setDate(LocalDate.now().plusDays(i));
+            session.setStartTime(LocalTime.of(8 + i, 0));
+            session.setEndTime(LocalTime.of(10 + i, 0));
+            session.setMaxParticipants(4);
+            session.setCurrentParticipants(0);
+            session.setPricePerPerson(BigDecimal.valueOf(150000 + i * 50000));
+            session.setDescription("Morning tennis session " + (i + 1));
+            session.setType("REGULAR");
+            session.setStatus(Session.SessionStatus.ACTIVE);
+            sessionRepository.save(session);
+        }
     }
 } 
