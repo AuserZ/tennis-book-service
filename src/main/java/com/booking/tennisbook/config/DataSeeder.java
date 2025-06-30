@@ -91,42 +91,6 @@ public class DataSeeder implements CommandLineRunner {
             "Pay using Mandiri Virtual Account"
         );
 
-        // Create Credit Card Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.CREDIT_CARD.getValue(), 
-            "Credit Card", 
-            PaymentEnums.PaymentMethodType.CREDIT_CARD,
-            "Credit Card",
-            "Pay using Credit Card"
-        );
-
-        // Create OVO E-Money Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.EMONEY_OVO.getValue(), 
-            "OVO E-Money", 
-            PaymentEnums.PaymentMethodType.EMONEY_OVO,
-            "OVO E-Money",
-            "Pay using OVO E-Money"
-        );
-
-        // Create DANA E-Money Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.EMONEY_DANA.getValue(), 
-            "DANA E-Money", 
-            PaymentEnums.PaymentMethodType.EMONEY_DANA,
-            "DANA E-Money",
-            "Pay using DANA E-Money"
-        );
-
-        // Create ShopeePay E-Money Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.EMONEY_SHOPEEPAY.getValue(), 
-            "ShopeePay E-Money", 
-            PaymentEnums.PaymentMethodType.EMONEY_SHOPEEPAY,
-            "ShopeePay E-Money",
-            "Pay using ShopeePay E-Money"
-        );
-
         // Create QRIS Payment Method
         createPaymentMethod(
             PaymentEnums.PaymentMethodType.QRIS.getValue(), 
@@ -152,42 +116,6 @@ public class DataSeeder implements CommandLineRunner {
             PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BNI,
             "BNI Virtual Account",
             "Pay using BNI Virtual Account"
-        );
-
-        // Create LinkAja E-Money Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.EMONEY_LINKAJA.getValue(), 
-            "LinkAja E-Money", 
-            PaymentEnums.PaymentMethodType.EMONEY_LINKAJA,
-            "LinkAja E-Money",
-            "Pay using LinkAja E-Money"
-        );
-
-        // Create Permata Virtual Account Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BANK_PERMATA.getValue(), 
-            "Permata Virtual Account", 
-            PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BANK_PERMATA,
-            "Permata Virtual Account",
-            "Pay using Permata Virtual Account"
-        );
-
-        // Create CIMB Virtual Account Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BANK_CIMB.getValue(), 
-            "CIMB Virtual Account", 
-            PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BANK_CIMB,
-            "CIMB Virtual Account",
-            "Pay using CIMB Virtual Account"
-        );
-
-        // Create Danamon Virtual Account Payment Method
-        createPaymentMethod(
-            PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BANK_DANAMON.getValue(), 
-            "Danamon Virtual Account", 
-            PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BANK_DANAMON,
-            "Danamon Virtual Account",
-            "Pay using Danamon Virtual Account"
         );
     }
 
