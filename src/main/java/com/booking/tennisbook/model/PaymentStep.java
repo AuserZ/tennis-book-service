@@ -2,6 +2,8 @@ package com.booking.tennisbook.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Data
@@ -13,14 +15,15 @@ public class PaymentStep {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "payment_method_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private PaymentMethod paymentMethod;
 
-    @Column(nullable = false)
-    private String stepDescription;
-
-    @Column(nullable = false)
+    @Column(name = "step_number", nullable = false)
     private String stepNumber;
 
-}
+    @Column(name = "step_description", nullable = false)
+    private String stepDescription;
+} 

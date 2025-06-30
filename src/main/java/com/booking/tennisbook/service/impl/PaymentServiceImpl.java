@@ -1,21 +1,29 @@
 package com.booking.tennisbook.service.impl;
 
 import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
+import com.booking.tennisbook.dto.payment.DokuPaymentRequest;
+import com.booking.tennisbook.dto.payment.OrderDoku;
+import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
 import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Booking;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.model.PaymentMethod;
-import com.booking.tennisbook.model.PaymentStep;
 import com.booking.tennisbook.model.Session;
+import com.booking.tennisbook.model.User;
 import com.booking.tennisbook.repository.*;
 import com.booking.tennisbook.service.PaymentService;
 import com.booking.tennisbook.service.SessionService;
+import com.booking.tennisbook.util.PaymentUtil;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,17 +36,19 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final PaymentMethodRepository paymentMethodRepository;
-    private final PaymentStepRepository paymentStepRepository;
+    private final UserRepository userRepository;
+    private PaymentUtil paymentUtil;
 
     @Autowired
     private final SessionService sessionService;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository, SessionService sessionService, PaymentMethodRepository paymentMethodRepository, PaymentStepRepository paymentStepRepository) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,
+            SessionService sessionService, PaymentMethodRepository paymentMethodRepository, UserRepository userRepository) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.sessionService = sessionService;
         this.paymentMethodRepository = paymentMethodRepository;
-        this.paymentStepRepository = paymentStepRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -48,7 +58,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentMethodId)
-                .orElseThrow(()-> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
 
         if (paymentRepository.existsByBookingIdAndStatus(bookingId, Payment.PaymentStatus.COMPLETED)) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_EXISTS);
@@ -73,9 +83,10 @@ public class PaymentServiceImpl implements PaymentService {
         CreatePaymentResponse processedPaymentResponse = new CreatePaymentResponse();
 
         processedPaymentResponse.setPaymentId(processedPayment.getId());
-        processedPaymentResponse.setMessage(processedPayment.getStatus() == Payment.PaymentStatus.COMPLETED ? "Payment processed successfully" : "Payment processing failed");
+        processedPaymentResponse.setMessage(
+                processedPayment.getStatus() == Payment.PaymentStatus.COMPLETED ? "Payment processed successfully"
+                        : "Payment processing failed");
         processedPaymentResponse.setStatus(String.valueOf(processedPayment.getStatus()));
-        processedPaymentResponse.setPaymentSteps(paymentStepRepository.findByPaymentMethodId(paymentMethodId));
 
         return processedPaymentResponse;
     }
@@ -143,13 +154,38 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentMethod getPaymentMethodWithSteps(String paymentMethodId) {
+    public PaymentMethod getPaymentMethod(String paymentMethodId) {
         return paymentMethodRepository.findById(paymentMethodId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
     }
 
     @Override
-    public List<PaymentStep> getPaymentStepsByMethod(String paymentMethodId) {
-        return paymentStepRepository.findByPaymentMethodId(paymentMethodId);
+    public PaymentDokuResponse createPaymentDoku(Long bookingId, String paymentMethodId) {
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> {
+                    logger.error("User not found with email: {}", userEmail);
+                    return new BusinessException(ErrorCode.NOT_FOUND);
+                });
+
+        // Build Payment Request to doku
+        DokuPaymentRequest paymentRequest = paymentUtil.buildDokuRequest(booking, user);
+
+        if(isEmpty(paymentRequest))
+                throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        
+        // Request Payment
+        PaymentDokuResponse response = paymentUtil.processPayment(paymentRequest);
+
+        if(isEmpty(response))
+                throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        
+
+        return response;
     }
-} 
+
+}

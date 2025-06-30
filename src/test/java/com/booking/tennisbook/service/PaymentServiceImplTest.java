@@ -10,6 +10,9 @@ import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.repository.*;
 import com.booking.tennisbook.service.SessionService;
 import com.booking.tennisbook.service.impl.PaymentServiceImpl;
+import com.booking.tennisbook.util.PaymentUtil;
+import com.booking.tennisbook.dto.payment.DokuPaymentRequest;
+import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -36,11 +39,12 @@ class PaymentServiceImplTest {
     @Mock
     private PaymentMethodRepository paymentMethodRepository;
 
-    @Mock
-    private PaymentStepRepository paymentStepRepository;
 
     @Mock
     private SessionService sessionService;
+
+    @Mock
+    private PaymentUtil paymentUtil;
 
     @InjectMocks
     private PaymentServiceImpl paymentService;
@@ -110,12 +114,38 @@ class PaymentServiceImplTest {
         when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
         when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
         when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
-        when(paymentStepRepository.findByPaymentMethodId("BCA1")).thenReturn(List.of());
-
+    
         CreatePaymentResponse response = paymentService.createPayment(1L, "BCA1");
 
         assertNotNull(response);
         assertEquals(1L, response.getPaymentId());
         assertEquals("Payment processed successfully", response.getMessage());
+    }
+
+    @Test
+    void createPayment_InvokesPaymentUtilProcessPayment() {
+        Booking booking = new Booking();
+        Session session = new Session();
+        session.setId(2L);
+        booking.setId(1L);
+        booking.setTotalPrice(BigDecimal.valueOf(100));
+        booking.setSession(session);
+        PaymentMethod paymentMethod = new PaymentMethod();
+        paymentMethod.setId("BCA1");
+
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(paymentMethodRepository.findById("BCA1")).thenReturn(Optional.of(paymentMethod));
+        when(paymentRepository.existsByBookingIdAndStatus(1L, Payment.PaymentStatus.COMPLETED)).thenReturn(false);
+        when(sessionService.updateSessionParticipants(session, 1)).thenReturn(null);
+
+        // Mock PaymentUtil.processPayment
+        DokuPaymentRequest dokuRequest = new DokuPaymentRequest();
+        PaymentDokuResponse dokuResponse = new PaymentDokuResponse();
+        when(paymentUtil.processPayment(any(DokuPaymentRequest.class))).thenReturn(dokuResponse);
+
+        // You may need to adjust createPayment to call paymentUtil.processPayment internally
+        // For this test, we just verify the interaction
+        paymentService.createPayment(1L, "BCA1");
+        verify(paymentUtil, atLeastOnce()).processPayment(any(DokuPaymentRequest.class));
     }
 }

@@ -1,13 +1,9 @@
 package com.booking.tennisbook.model;
 
+import com.booking.tennisbook.enums.PaymentEnums;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @Table(name = "payment_methods")
@@ -17,25 +13,19 @@ public class PaymentMethod {
     @Id
     private String id;
 
-    @OneToMany(mappedBy = "paymentMethod", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private List<PaymentStep> paymentSteps = new ArrayList<>();
-
     @Column(nullable = false)
     private String methodName;
 
-    @Column(nullable = false)
-    private String accountNumber;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method_type", nullable = false)
+    private PaymentEnums.PaymentMethodType paymentMethodType;
 
-    // Convenience methods for managing payment steps
-    public void addPaymentStep(PaymentStep paymentStep) {
-        paymentSteps.add(paymentStep);
-        paymentStep.setPaymentMethod(this);
-    }
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
-    public void removePaymentStep(PaymentStep paymentStep) {
-        paymentSteps.remove(paymentStep);
-        paymentStep.setPaymentMethod(null);
-    }
+    @Column(name = "display_name")
+    private String displayName;
+
+    @Column(name = "description")
+    private String description;
 }

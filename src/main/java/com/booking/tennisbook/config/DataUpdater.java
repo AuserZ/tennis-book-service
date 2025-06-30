@@ -1,9 +1,8 @@
 package com.booking.tennisbook.config;
 
+import com.booking.tennisbook.enums.PaymentEnums;
 import com.booking.tennisbook.model.PaymentMethod;
-import com.booking.tennisbook.model.PaymentStep;
 import com.booking.tennisbook.repository.PaymentMethodRepository;
-import com.booking.tennisbook.repository.PaymentStepRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +11,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -25,9 +22,6 @@ public class DataUpdater implements CommandLineRunner {
 
     @Autowired
     private PaymentMethodRepository paymentMethodRepository;
-
-    @Autowired
-    private PaymentStepRepository paymentStepRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -43,98 +37,133 @@ public class DataUpdater implements CommandLineRunner {
     }
 
     private void updatePaymentMethods() {
-        // Example: Update BCA Transfer account number
-        Optional<PaymentMethod> bcaMethod = paymentMethodRepository.findById("BCA1");
+        // Example: Update BCA Virtual Account display name
+        Optional<PaymentMethod> bcaMethod = paymentMethodRepository.findById(PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BCA.getValue());
         if (bcaMethod.isPresent()) {
             PaymentMethod method = bcaMethod.get();
-            if (!"1234567890".equals(method.getAccountNumber())) {
-                method.setAccountNumber("1234567890");
+            if (!"BCA Virtual Account".equals(method.getDisplayName())) {
+                method.setDisplayName("BCA Virtual Account");
+                method.setDescription("Pay using BCA Virtual Account");
                 paymentMethodRepository.save(method);
-                logger.info("Updated BCA Transfer account number");
+                logger.info("Updated BCA Virtual Account details");
             }
         }
 
-        // Example: Update Credit Card steps
-        updatePaymentSteps("CC1", Arrays.asList(
-            "Select Credit Card payment option",
-            "Enter card number",
-            "Enter cardholder name",
-            "Enter expiry date (MM/YY)",
-            "Enter CVV/CVC code",
-            "Enter billing address",
-            "Review payment details",
-            "Click Pay Now",
-            "Enter 3D Secure password if prompted",
-            "Payment completed",
-            "Check email for confirmation" // New step
-        ));
+        // Example: Update Credit Card description
+        Optional<PaymentMethod> ccMethod = paymentMethodRepository.findById(PaymentEnums.PaymentMethodType.CREDIT_CARD.getValue());
+        if (ccMethod.isPresent()) {
+            PaymentMethod method = ccMethod.get();
+            if (!"Pay using Credit Card".equals(method.getDescription())) {
+                method.setDescription("Pay using Credit Card");
+                paymentMethodRepository.save(method);
+                logger.info("Updated Credit Card description");
+            }
+        }
     }
 
     private void addNewPaymentMethods() {
         // Add new payment method if it doesn't exist
-        if (!paymentMethodRepository.existsById("SHOPEE1")) {
-            PaymentMethod shopeeMethod = createPaymentMethod("SHOPEE1", "ShopeePay", "081234567893");
-            List<String> shopeeSteps = Arrays.asList(
-                "Open Shopee app",
-                "Login to your account",
-                "Go to ShopeePay section",
-                "Select Pay menu",
-                "Scan QR code or enter merchant code",
-                "Enter payment amount",
-                "Review payment details",
-                "Enter your PIN",
-                "Payment successful"
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_MAYBANK.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_MAYBANK.getValue(),
+                "Maybank Virtual Account",
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_MAYBANK,
+                "Maybank Virtual Account",
+                "Pay using Maybank Virtual Account"
             );
-            createPaymentSteps(shopeeMethod, shopeeSteps);
-            logger.info("Added new payment method: ShopeePay");
+            logger.info("Added new payment method: Maybank Virtual Account");
         }
 
         // Add another new payment method
-        if (!paymentMethodRepository.existsById("LINKAJA1")) {
-            PaymentMethod linkajaMethod = createPaymentMethod("LINKAJA1", "LinkAja", "081234567894");
-            List<String> linkajaSteps = Arrays.asList(
-                "Open LinkAja app",
-                "Login to your account",
-                "Go to Pay menu",
-                "Scan QR code or enter merchant code",
-                "Enter payment amount",
-                "Review payment details",
-                "Enter your PIN",
-                "Payment successful"
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_SINARMAS.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_SINARMAS.getValue(),
+                "Sinarmas Virtual Account",
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_SINARMAS,
+                "Sinarmas Virtual Account",
+                "Pay using Sinarmas Virtual Account"
             );
-            createPaymentSteps(linkajaMethod, linkajaSteps);
-            logger.info("Added new payment method: LinkAja");
+            logger.info("Added new payment method: Sinarmas Virtual Account");
+        }
+
+        // Add more virtual accounts
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BNC.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BNC.getValue(),
+                "BNC Virtual Account",
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BNC,
+                "BNC Virtual Account",
+                "Pay using BNC Virtual Account"
+            );
+            logger.info("Added new payment method: BNC Virtual Account");
+        }
+
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BTN.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BTN.getValue(),
+                "BTN Virtual Account",
+                PaymentEnums.PaymentMethodType.VIRTUAL_ACCOUNT_BTN,
+                "BTN Virtual Account",
+                "Pay using BTN Virtual Account"
+            );
+            logger.info("Added new payment method: BTN Virtual Account");
+        }
+
+        // Add e-money methods
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.EMONEY_DOKU.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.EMONEY_DOKU.getValue(),
+                "Doku E-Money",
+                PaymentEnums.PaymentMethodType.EMONEY_DOKU,
+                "Doku E-Money",
+                "Pay using Doku E-Money"
+            );
+            logger.info("Added new payment method: Doku E-Money");
+        }
+
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.EMONEY_SHOPEE_PAY.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.EMONEY_SHOPEE_PAY.getValue(),
+                "ShopeePay E-Money",
+                PaymentEnums.PaymentMethodType.EMONEY_SHOPEE_PAY,
+                "ShopeePay E-Money",
+                "Pay using ShopeePay E-Money"
+            );
+            logger.info("Added new payment method: ShopeePay E-Money");
+        }
+
+        // Add peer-to-peer methods
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.PEER_TO_PEER_KREDIVO.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.PEER_TO_PEER_KREDIVO.getValue(),
+                "Kredivo PayLater",
+                PaymentEnums.PaymentMethodType.PEER_TO_PEER_KREDIVO,
+                "Kredivo PayLater",
+                "Pay using Kredivo PayLater"
+            );
+            logger.info("Added new payment method: Kredivo PayLater");
+        }
+
+        if (!paymentMethodRepository.existsById(PaymentEnums.PaymentMethodType.PEER_TO_PEER_INDODANA.getValue())) {
+            createPaymentMethod(
+                PaymentEnums.PaymentMethodType.PEER_TO_PEER_INDODANA.getValue(),
+                "Indodana PayLater",
+                PaymentEnums.PaymentMethodType.PEER_TO_PEER_INDODANA,
+                "Indodana PayLater",
+                "Pay using Indodana PayLater"
+            );
+            logger.info("Added new payment method: Indodana PayLater");
         }
     }
 
-    private void updatePaymentSteps(String paymentMethodId, List<String> newStepDescriptions) {
-        Optional<PaymentMethod> paymentMethod = paymentMethodRepository.findById(paymentMethodId);
-        if (paymentMethod.isPresent()) {
-            // Delete existing steps
-            List<PaymentStep> existingSteps = paymentStepRepository.findByPaymentMethodId(paymentMethodId);
-            paymentStepRepository.deleteAll(existingSteps);
-            
-            // Create new steps
-            createPaymentSteps(paymentMethod.get(), newStepDescriptions);
-            logger.info("Updated payment steps for method: " + paymentMethodId);
-        }
-    }
-
-    private PaymentMethod createPaymentMethod(String id, String methodName, String accountNumber) {
+    private PaymentMethod createPaymentMethod(String id, String methodName, PaymentEnums.PaymentMethodType paymentMethodType, String displayName, String description) {
         PaymentMethod paymentMethod = new PaymentMethod();
         paymentMethod.setId(id);
         paymentMethod.setMethodName(methodName);
-        paymentMethod.setAccountNumber(accountNumber);
+        paymentMethod.setPaymentMethodType(paymentMethodType);
+        paymentMethod.setDisplayName(displayName);
+        paymentMethod.setDescription(description);
+        paymentMethod.setIsActive(true);
         return paymentMethodRepository.save(paymentMethod);
-    }
-
-    private void createPaymentSteps(PaymentMethod paymentMethod, List<String> stepDescriptions) {
-        for (int i = 0; i < stepDescriptions.size(); i++) {
-            PaymentStep step = new PaymentStep();
-            step.setPaymentMethod(paymentMethod);
-            step.setStepDescription(stepDescriptions.get(i));
-            step.setStepNumber(String.valueOf(i + 1));
-            paymentStepRepository.save(step);
-        }
     }
 } 

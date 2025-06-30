@@ -1,9 +1,9 @@
 package com.booking.tennisbook.service;
 
 import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
+import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.model.PaymentMethod;
-import com.booking.tennisbook.model.PaymentStep;
 
 import java.util.List;
 
@@ -12,6 +12,6 @@ public interface PaymentService {
     Payment getPayment(Long paymentId);
     List<Payment> getPaymentsByBooking(Long bookingId);
     Payment refundPayment(Long paymentId);
-    PaymentMethod getPaymentMethodWithSteps(String paymentMethodId);
-    List<PaymentStep> getPaymentStepsByMethod(String paymentMethodId);
+    PaymentMethod getPaymentMethod(String paymentMethodId);
+    PaymentDokuResponse createPaymentDoku(Long bookingId, String paymentMethodId);
 } 

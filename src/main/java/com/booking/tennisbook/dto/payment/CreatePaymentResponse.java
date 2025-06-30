@@ -1,9 +1,6 @@
 package com.booking.tennisbook.dto.payment;
 
-import com.booking.tennisbook.model.PaymentStep;
 import lombok.*;
-
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,5 +17,5 @@ public class CreatePaymentResponse {
     private String message;
 
     @NonNull
-    private List<PaymentStep> paymentSteps;
+    private String invoiceNumber;
 }

@@ -9,4 +9,4 @@ import java.util.List;
 @Repository
 public interface PaymentStepRepository extends JpaRepository<PaymentStep, Long> {
     List<PaymentStep> findByPaymentMethodId(String paymentMethodId);
-}
+} 

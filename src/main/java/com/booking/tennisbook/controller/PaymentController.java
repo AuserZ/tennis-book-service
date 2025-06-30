@@ -1,19 +1,26 @@
 package com.booking.tennisbook.controller;
 
 import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
+import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
 import com.booking.tennisbook.dto.payment.PaymentRequestBody;
+import com.booking.tennisbook.exception.BusinessException;
+import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Payment;
 import com.booking.tennisbook.model.PaymentMethod;
-import com.booking.tennisbook.model.PaymentStep;
 import com.booking.tennisbook.service.PaymentService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 import java.util.List;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/payments")
 public class PaymentController {
+    private static final Logger logger = Logger.getLogger(PaymentController.class.getName());
 
     private final PaymentService paymentService;
 
@@ -24,7 +31,8 @@ public class PaymentController {
     @PostMapping("/booking")
     public ResponseEntity<CreatePaymentResponse> createPayment(PaymentRequestBody requestBody) {
 
-        CreatePaymentResponse payment = paymentService.createPayment(requestBody.getBookingId(), requestBody.getPaymentMethodId());
+        CreatePaymentResponse payment = paymentService.createPayment(requestBody.getBookingId(),
+                requestBody.getPaymentMethodId());
         return ResponseEntity.ok(payment);
     }
 
@@ -46,15 +54,17 @@ public class PaymentController {
         return ResponseEntity.ok(payment);
     }
 
-    @GetMapping("/methods/{paymentMethodId}")
-    public ResponseEntity<PaymentMethod> getPaymentMethodWithSteps(@PathVariable String paymentMethodId) {
-        PaymentMethod paymentMethod = paymentService.getPaymentMethodWithSteps(paymentMethodId);
-        return ResponseEntity.ok(paymentMethod);
-    }
+    @PostMapping("/new")
+    public ResponseEntity<?> newPaymentDoku(@RequestBody PaymentRequestBody request) {
+        logger.info("[START] New Payment Doku");
+        PaymentDokuResponse payment = paymentService.createPaymentDoku(request.getBookingId(),
+                request.getPaymentMethodId());
 
-    @GetMapping("/methods/{paymentMethodId}/steps")
-    public ResponseEntity<List<PaymentStep>> getPaymentStepsByMethod(@PathVariable String paymentMethodId) {
-        List<PaymentStep> paymentSteps = paymentService.getPaymentStepsByMethod(paymentMethodId);
-        return ResponseEntity.ok(paymentSteps);
+        if (isEmpty(payment))
+            throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+
+        logger.info("[END] New Payment Doku");
+
+        return ResponseEntity.ok(payment);
     }
-} 
+}
