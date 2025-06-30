@@ -75,16 +75,16 @@ public class PaymentUtil {
         logger.info("[END] Order data built - Amount: {}, Invoice: {}, Currency: {}", 
                    booking.getTotalPrice(), orderDoku.getInvoiceNumber(), orderDoku.getCurrency());
 
-        logger.info("[START] Building line items for session ID: {}", booking.getSession().getId());
-        List<LineItemsDoku> lineItems = new ArrayList<>();
-        LineItemsDoku bookingSession = new LineItemsDoku(booking.getSession().getId(), booking.getSession().getCoach().getName(), booking.getSession().getTennisField().getName(), booking.getSession().getStartTime(), booking.getSession().getEndTime(), booking.getSession().getDate(),booking.getSession().getType(), booking.getParticipants(), booking.getTotalPrice(), "service");
-        logger.info("[END] Line items built - Session: {}, Coach: {}, Field: {}, Type: {}, Participants: {}", 
-                   booking.getSession().getId(), booking.getSession().getCoach().getName(), 
-                   booking.getSession().getTennisField().getName(), booking.getSession().getType(), 
-                   booking.getParticipants());
+        // logger.info("[START] Building line items for session ID: {}", booking.getSession().getId());
+        // List<LineItemsDoku> lineItems = new ArrayList<>();
+        // LineItemsDoku bookingSession = new LineItemsDoku(booking.getSession().getId(), booking.getSession().getCoach().getName(), booking.getSession().getTennisField().getName(), booking.getSession().getStartTime(), booking.getSession().getEndTime(), booking.getSession().getDate(),booking.getSession().getType(), booking.getParticipants(), booking.getTotalPrice(), "service");
+        // logger.info("[END] Line items built - Session: {}, Coach: {}, Field: {}, Type: {}, Participants: {}", 
+        //            booking.getSession().getId(), booking.getSession().getCoach().getName(), 
+        //            booking.getSession().getTennisField().getName(), booking.getSession().getType(), 
+        //            booking.getParticipants());
 
-        lineItems.add(bookingSession);
-        orderDoku.setLineItems(lineItems);
+        // lineItems.add(bookingSession);
+        // orderDoku.setLineItems(lineItems);
         logger.info("[END] Order building completed");
 
         logger.info("[START] Building payment configuration");
