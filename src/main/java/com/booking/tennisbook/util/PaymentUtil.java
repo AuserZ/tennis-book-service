@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
+import java.time.ZoneOffset;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -195,27 +196,30 @@ public class PaymentUtil {
     public PaymentDokuResponse processPaymentCheckout(DokuPaymentRequest paymentRequest) {
         long startTime = System.currentTimeMillis();
         logger.info("[START] Processing DOKU Checkout payment request");
-        
+
         try {
-            logger.debug("Serializing payment request to JSON");
             String minifiedJson = objectMapper.writeValueAsString(paymentRequest);
-            logger.debug("Payment request JSON: {}", minifiedJson);
-            
-            logger.info("Generating timestamp for request");
-            String timestamp = generateTimestamp();
-            logger.debug("Timestamp generated: {}", timestamp);
-            
-            logger.info("Creating request signature");
-            String signature = createCheckoutSignature(minifiedJson, timestamp);
-            logger.debug("Signature created successfully");
-            
-            logger.info("Executing payment request to DOKU Checkout API");
-            PaymentDokuResponse response = executeCheckoutPaymentRequest(minifiedJson, timestamp, signature);
-            
+            String requestId = generateRequestId();
+            String timestamp = ZonedDateTime.now(ZoneOffset.UTC)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+            String signature = createCheckoutSignature(dokuClientId, requestId, timestamp, minifiedJson);
+
+            PaymentDokuResponse response = webClient.post()
+                .uri(dokuPaymentApi)
+                .header("Client-Id", dokuClientId)
+                .header("Request-Id", requestId)
+                .header("Request-Timestamp", timestamp)
+                .header("Signature", signature)
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(minifiedJson)
+                .retrieve()
+                .bodyToMono(PaymentDokuResponse.class)
+                .block();
+
             long endTime = System.currentTimeMillis();
             logger.info("[END] DOKU Checkout payment processed successfully in {}ms", (endTime - startTime));
             logger.debug("Payment response: {}", response);
-            
+
             return response;
         } catch (Exception e) {
             long endTime = System.currentTimeMillis();
@@ -224,29 +228,9 @@ public class PaymentUtil {
         }
     }
 
-    private String createCheckoutSignature(String requestBody, String timestamp) {
-        logger.debug("Creating DOKU Checkout signature");
-        
-        // According to DOKU Checkout documentation, signature is HMACSHA256
-        // The signature should be created using the request body and timestamp
-        String stringToSign = requestBody + timestamp;
+    private String createCheckoutSignature(String clientId, String requestId, String timestamp, String requestBody) {
+        String stringToSign = clientId + ":" + requestId + ":" + timestamp + ":" + requestBody;
         return "HMACSHA256=" + hmacSha256Base64(stringToSign, dokuClientSecret);
-    }
-
-    private PaymentDokuResponse executeCheckoutPaymentRequest(String requestBody, String timestamp, String signature) {
-        logger.debug("Executing DOKU Checkout payment request");
-        
-        return webClient.post()
-                .uri(dokuPaymentApi)
-                .header("Client-Id", dokuClientId)
-                .header("Request-Id", generateRequestId())
-                .header("Request-Timestamp", timestamp)
-                .header("Signature", signature)
-                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(PaymentDokuResponse.class)
-                .block();
     }
 
     private static String hmacSha256Base64(String data, String secret) {
