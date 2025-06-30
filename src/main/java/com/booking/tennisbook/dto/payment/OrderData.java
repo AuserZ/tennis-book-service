@@ -19,4 +19,10 @@ public class OrderData {
     private String currency;
     @JsonProperty("session_id")
     private String sessionId;
+    @JsonProperty("callback_url")
+    private String callbackUrl;
+    @JsonProperty("callback_url_cancel")
+    private String callbackUrlCancel;
+    @JsonProperty("callback_url_result")
+    private String callbackUrlResult;
 } 
