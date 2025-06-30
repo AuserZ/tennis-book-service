@@ -8,7 +8,7 @@ import com.booking.tennisbook.model.PaymentMethod;
 import java.util.List;
 
 public interface PaymentService {
-    CreatePaymentResponse createPayment(Long bookingId);
+    CreatePaymentResponse createPayment(Long bookingId, String paymentMethodId);
     Payment getPayment(Long paymentId);
     List<Payment> getPaymentsByBooking(Long bookingId);
     Payment refundPayment(Long paymentId);
