@@ -56,6 +56,12 @@ public class PaymentUtil {
     private String dokuClientId;
     @Value("${doku.client.secret}")
     private String dokuClientSecret;
+    @Value("${doku.callback.url}")
+    private String dokuCallbackUrl;
+    @Value("${doku.callback.url.cancel}")
+    private String dokuCallbackUrlCancel;
+    @Value("${doku.callback.url.result}")
+    private String dokuCallbackUrlResult;
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
@@ -77,21 +83,9 @@ public class PaymentUtil {
         orderDoku.setAmount(booking.getTotalPrice().intValue());
         orderDoku.setInvoice_number(invoiceBuilder(booking));
         orderDoku.setCurrency("IDR");
+        
         logger.info("[END] Order data built - Amount: {}, Invoice: {}, Currency: {}",
                 booking.getTotalPrice(), orderDoku.getInvoice_number(), orderDoku.getCurrency());
-
-        // Optionally add line items if needed (uncomment and adjust as required)
-        // List<LineItemsDoku> lineItems = new ArrayList<>();
-        // LineItemsDoku bookingSession = new
-        // LineItemsDoku(booking.getSession().getId(),
-        // booking.getSession().getCoach().getName(),
-        // booking.getSession().getTennisField().getName(),
-        // booking.getSession().getStartTime(), booking.getSession().getEndTime(),
-        // booking.getSession().getDate(), booking.getSession().getType(),
-        // booking.getParticipants(), booking.getTotalPrice(), "service");
-        // lineItems.add(bookingSession);
-        // orderDoku.setLineItems(lineItems);
-        logger.info("[END] Order building completed");
 
         logger.info("[START] Building payment configuration");
         PaymentDoku paymentDoku = new PaymentDoku();

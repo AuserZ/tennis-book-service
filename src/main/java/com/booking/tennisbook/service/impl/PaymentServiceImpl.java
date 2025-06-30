@@ -139,8 +139,6 @@ public class PaymentServiceImpl implements PaymentService {
         logger.info("Session participants updated successfully - Current participants: {}", session.getCurrentParticipants());
 
         logger.info("Simulating payment gateway integration");
-        // Here you would integrate with a real payment gateway
-        // For now, we'll just simulate a successful payment
         payment.setStatus(Payment.PaymentStatus.COMPLETED);
         payment.setProcessedAt(LocalDateTime.now());
 

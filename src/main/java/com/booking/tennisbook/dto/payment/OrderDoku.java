@@ -15,7 +15,9 @@ import lombok.ToString;
 public class OrderDoku {
     private Integer amount;
     private String invoice_number;
-    // private List<LineItemsDoku> lineItems;
     private String currency;
+    private String callback_url;
+    private String callback_url_cancel;
+    private String callback_url_result;
     
 }
