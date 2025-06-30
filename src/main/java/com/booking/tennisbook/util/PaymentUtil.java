@@ -64,25 +64,30 @@ public class PaymentUtil {
 
     public DokuPaymentRequest buildDokuRequest(Booking booking, User user){
         
-        logger.info("[START] Build Doku Request");
+        logger.info("[START] Building DOKU payment request for booking ID: {}, user ID: {}", booking.getId(), user.getId());
         DokuPaymentRequest dokuPaymentRequest = new DokuPaymentRequest();
 
-        logger.info("[START] Build Order");
+        logger.info("[START] Building order data for booking ID: {}", booking.getId());
         OrderDoku orderDoku = new OrderDoku();
         orderDoku.setAmount(booking.getTotalPrice());
         orderDoku.setInvoiceNumber(invoiceBuilder(booking));
         orderDoku.setCurrency("IDR");
+        logger.info("[END] Order data built - Amount: {}, Invoice: {}, Currency: {}", 
+                   booking.getTotalPrice(), orderDoku.getInvoiceNumber(), orderDoku.getCurrency());
 
-        logger.info("[START] Build Line Items");
+        logger.info("[START] Building line items for session ID: {}", booking.getSession().getId());
         List<LineItemsDoku> lineItems = new ArrayList<>();
         LineItemsDoku bookingSession = new LineItemsDoku(booking.getSession().getId(), booking.getSession().getCoach().getName(), booking.getSession().getTennisField().getName(), booking.getSession().getStartTime(), booking.getSession().getEndTime(), booking.getSession().getDate(),booking.getSession().getType(), booking.getParticipants(), booking.getTotalPrice(), "service");
-        logger.info("[END] Build Line Items");
+        logger.info("[END] Line items built - Session: {}, Coach: {}, Field: {}, Type: {}, Participants: {}", 
+                   booking.getSession().getId(), booking.getSession().getCoach().getName(), 
+                   booking.getSession().getTennisField().getName(), booking.getSession().getType(), 
+                   booking.getParticipants());
 
         lineItems.add(bookingSession);
         orderDoku.setLineItems(lineItems);
-        logger.info("[END] Build Order");
+        logger.info("[END] Order building completed");
 
-        logger.info("[START] Build Payment");
+        logger.info("[START] Building payment configuration");
         PaymentDoku paymentDoku = new PaymentDoku();
         paymentDoku.setPayment_due_date(10);
         paymentDoku.setType("SALE");
@@ -94,34 +99,58 @@ public class PaymentUtil {
                 .toList();
 
         paymentDoku.setPayment_method_types(paymentMethodTypes);
-        logger.info("[END] Build Payment");
+        logger.info("[END] Payment configuration built - Due date: {}, Type: {}, Available methods: {}", 
+                   paymentDoku.getPayment_due_date(), paymentDoku.getType(), paymentMethodTypes.size());
 
-        logger.info("[START] Build Customer");
+        logger.info("[START] Building customer details for user: {}", user.getEmail());
         CustomerDetails customerDetails = new CustomerDetails();
         customerDetails.setId(user.getId());
         customerDetails.setEmail(user.getEmail());
         customerDetails.setName(user.getName());
-        logger.info("[END] Build Customer");
+        logger.info("[END] Customer details built - ID: {}, Email: {}, Name: {}", 
+                   customerDetails.getId(), customerDetails.getEmail(), customerDetails.getName());
 
         dokuPaymentRequest.setOrder(orderDoku);
         dokuPaymentRequest.setPayment(paymentDoku);
         dokuPaymentRequest.setCustomer(customerDetails);
         
-        logger.info("[End] Build Doku Request");
+        logger.info("[END] DOKU payment request built successfully for booking ID: {}", booking.getId());
 
         return dokuPaymentRequest;
     }
 
     public PaymentDokuResponse processPayment(DokuPaymentRequest paymentRequest) {
+        long startTime = System.currentTimeMillis();
+        logger.info("[START] Processing DOKU payment request");
+        
         try {
+            logger.debug("Serializing payment request to JSON");
             String minifiedJson = objectMapper.writeValueAsString(paymentRequest);
+            logger.debug("Payment request JSON: {}", minifiedJson);
+            
+            logger.info("Fetching DOKU access token");
             String accessToken = fetchAccessToken();
+            logger.debug("Access token retrieved successfully");
+            
+            logger.info("Generating timestamp for request");
             String timestamp = generateTimestamp();
+            logger.debug("Timestamp generated: {}", timestamp);
+            
+            logger.info("Creating request signature");
             String signature = createSignature(minifiedJson, accessToken, timestamp);
+            logger.debug("Signature created successfully");
+            
+            logger.info("Executing payment request to DOKU API");
             PaymentDokuResponse response = executePaymentRequest(minifiedJson, accessToken, timestamp, signature);
+            
+            long endTime = System.currentTimeMillis();
+            logger.info("[END] DOKU payment processed successfully in {}ms", (endTime - startTime));
+            logger.debug("Payment response: {}", response);
+            
             return response;
         } catch (Exception e) {
-            logger.error("Error processing DOKU payment", e);
+            long endTime = System.currentTimeMillis();
+            logger.error("[ERROR] Failed to process DOKU payment after {}ms", (endTime - startTime), e);
             throw new RuntimeException("Failed to process DOKU payment", e);
         }
     }
@@ -165,9 +194,14 @@ public class PaymentUtil {
     }
 
     private String fetchAccessToken() throws Exception {
+        logger.debug("Starting DOKU access token fetch");
+        
         // DOKU uses Basic Auth with clientId:clientSecret base64 encoded
         String basicAuth = Base64.getEncoder().encodeToString((dokuClientId + ":" + dokuClientSecret).getBytes(StandardCharsets.UTF_8));
         Map<String, String> body = Map.of("grantType", "client_credentials");
+        
+        logger.debug("Making authentication request to DOKU auth API: {}", dokuAuthApi);
+        
         // DOKU expects application/json
         Object rawResponse = webClient.post()
                 .uri(dokuAuthApi)
@@ -177,13 +211,19 @@ public class PaymentUtil {
                 .retrieve()
                 .bodyToMono(Object.class)
                 .block();
+                
         if (!(rawResponse instanceof Map<?, ?> response)) {
+            logger.error("Unexpected response type from DOKU auth API: {}", rawResponse.getClass().getSimpleName());
             throw new RuntimeException("Failed to fetch DOKU access token: unexpected response");
         }
+        
         Object token = response.get("access_token");
         if (token == null) {
+            logger.error("Missing access_token in DOKU auth response: {}", response);
             throw new RuntimeException("Failed to fetch DOKU access token: missing access_token");
         }
+        
+        logger.debug("Successfully retrieved DOKU access token");
         return token.toString();
     }
 
@@ -216,6 +256,8 @@ public class PaymentUtil {
     }
 
     public String invoiceBuilder(Booking booking) {
+        logger.debug("Building invoice number for booking ID: {}", booking.getId());
+        
         StringBuilder invoiceNumber = new StringBuilder();
 
         invoiceNumber.append("INV-");
@@ -223,13 +265,21 @@ public class PaymentUtil {
         invoiceNumber.append(booking.getSession().getType() + "-");
         invoiceNumber.append(booking.getSession().getId());
 
-        return invoiceNumber.toString();
+        String result = invoiceNumber.toString();
+        logger.debug("Generated invoice number: {} for booking ID: {}", result, booking.getId());
+        return result;
     }
 
     public String sessionTypeConverter(String type) throws Exception {
-        if (isEmpty(type))
-            throw new Exception();
+        logger.debug("Converting session type: {}", type);
+        
+        if (isEmpty(type)) {
+            logger.error("Session type is empty or null");
+            throw new Exception("Session type cannot be empty");
+        }
 
-        return type.equals("Private") ? "PRV" : "PBL";
+        String result = type.equals("Private") ? "PRV" : "PBL";
+        logger.debug("Converted session type from '{}' to '{}'", type, result);
+        return result;
     }
 }

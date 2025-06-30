@@ -55,16 +55,30 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public CreatePaymentResponse createPayment(Long bookingId, String paymentMethodId) {
+        logger.info("[START] Creating payment for booking ID: {}, payment method: {}", bookingId, paymentMethodId);
+        
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> {
+                    logger.error("Booking not found with ID: {}", bookingId);
+                    return new BusinessException(ErrorCode.BOOKING_NOT_FOUND);
+                });
+        logger.debug("Found booking: ID={}, TotalPrice={}, Status={}", 
+                    booking.getId(), booking.getTotalPrice(), booking.getStatus());
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentMethodId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
+                .orElseThrow(() -> {
+                    logger.error("Payment method not found with ID: {}", paymentMethodId);
+                    return new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND);
+                });
+        logger.debug("Found payment method: ID={}, Name={}, Type={}", 
+                    paymentMethod.getId(), paymentMethod.getMethodName(), paymentMethod.getPaymentMethodType());
 
         if (paymentRepository.existsByBookingIdAndStatus(bookingId, Payment.PaymentStatus.COMPLETED)) {
+            logger.error("Payment already exists for booking ID: {}", bookingId);
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_EXISTS);
         }
 
+        logger.info("Creating new payment record");
         Payment payment = new Payment();
         payment.setBooking(booking);
         payment.setAmount(booking.getTotalPrice());
@@ -73,7 +87,9 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setTransactionId(UUID.randomUUID().toString());
         payment.setCreatedAt(LocalDateTime.now());
         paymentRepository.save(payment);
+        logger.info("Payment record created with ID: {}, Transaction ID: {}", payment.getId(), payment.getTransactionId());
 
+        logger.info("Processing payment with ID: {}", payment.getId());
         Payment processedPayment = processPayment(payment.getId(), booking);
 
         if (processedPayment == null) {
@@ -81,6 +97,7 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessException(ErrorCode.PAYMENT_FAILED);
         }
 
+        logger.info("Building payment response");
         CreatePaymentResponse processedPaymentResponse = new CreatePaymentResponse();
 
         processedPaymentResponse.setPaymentId(processedPayment.getId());
@@ -89,25 +106,38 @@ public class PaymentServiceImpl implements PaymentService {
                         : "Payment processing failed");
         processedPaymentResponse.setStatus(String.valueOf(processedPayment.getStatus()));
 
+        logger.info("[END] Payment created successfully - Payment ID: {}, Status: {}, Message: {}", 
+                   processedPaymentResponse.getPaymentId(), processedPaymentResponse.getStatus(), 
+                   processedPaymentResponse.getMessage());
+
         return processedPaymentResponse;
     }
 
     @Transactional
     public Payment processPayment(Long paymentId, Booking booking) {
+        logger.info("[START] Processing payment with ID: {}", paymentId);
+        
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+                .orElseThrow(() -> {
+                    logger.error("Payment not found with ID: {}", paymentId);
+                    return new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
+                });
 
         if (payment.getStatus() != Payment.PaymentStatus.PENDING) {
+            logger.error("Invalid payment status: {} for payment ID: {}", payment.getStatus(), paymentId);
             throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
         }
 
+        logger.info("Updating session participants for session ID: {}", booking.getSession().getId());
         // update session participants
         Session session = sessionService.updateSessionParticipants(booking.getSession(), booking.getParticipants());
         if (session == null) {
-            logger.error("Failed to update session participants for session ID: {}", booking.getSession());
+            logger.error("Failed to update session participants for session ID: {}", booking.getSession().getId());
             throw new BusinessException(ErrorCode.SESSION_NOT_ENOUGH);
         }
+        logger.info("Session participants updated successfully - Current participants: {}", session.getCurrentParticipants());
 
+        logger.info("Simulating payment gateway integration");
         // Here you would integrate with a real payment gateway
         // For now, we'll just simulate a successful payment
         payment.setStatus(Payment.PaymentStatus.COMPLETED);
@@ -116,8 +146,13 @@ public class PaymentServiceImpl implements PaymentService {
         // Update booking status
         booking.setStatus(Booking.BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
+        logger.info("Booking status updated to CONFIRMED for booking ID: {}", booking.getId());
 
-        return paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
+        logger.info("[END] Payment processed successfully - Payment ID: {}, Status: {}, Processed at: {}", 
+                   savedPayment.getId(), savedPayment.getStatus(), savedPayment.getProcessedAt());
+
+        return savedPayment;
     }
 
     @Override
@@ -162,29 +197,47 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentDokuResponse createPaymentDoku(Long bookingId) {
+        logger.info("[START] Creating DOKU payment for booking ID: {}", bookingId);
 
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> {
+                    logger.error("Booking not found with ID: {}", bookingId);
+                    return new BusinessException(ErrorCode.BOOKING_NOT_FOUND);
+                });
+        logger.debug("Found booking: ID={}, TotalPrice={}, Session={}", 
+                    booking.getId(), booking.getTotalPrice(), booking.getSession().getId());
 
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        logger.debug("Getting user details for email: {}", userEmail);
+        
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> {
                     logger.error("User not found with email: {}", userEmail);
                     return new BusinessException(ErrorCode.NOT_FOUND);
                 });
+        logger.debug("Found user: ID={}, Name={}, Email={}", user.getId(), user.getName(), user.getEmail());
 
+        logger.info("Building DOKU payment request");
         // Build Payment Request to doku
         DokuPaymentRequest paymentRequest = paymentUtil.buildDokuRequest(booking, user);
 
-        if(isEmpty(paymentRequest))
-                throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        if(isEmpty(paymentRequest)) {
+            logger.error("Failed to build DOKU payment request for booking ID: {}", bookingId);
+            throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        }
+        logger.debug("DOKU payment request built successfully");
         
+        logger.info("Processing DOKU payment request");
         // Request Payment
         PaymentDokuResponse response = paymentUtil.processPayment(paymentRequest);
 
-        if(isEmpty(response))
-                throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        if(isEmpty(response)) {
+            logger.error("DOKU payment processing failed for booking ID: {}", bookingId);
+            throw new BusinessException(ErrorCode.PAYMENT_FAILED);
+        }
         
+        logger.info("[END] DOKU payment created successfully for booking ID: {}", bookingId);
+        logger.debug("DOKU payment response: {}", response);
 
         return response;
     }
