@@ -18,10 +18,11 @@ public class PaymentDokuLog {
     private Long id;
 
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String requestBody;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String responseBody;
 
     @Column(nullable = false)
