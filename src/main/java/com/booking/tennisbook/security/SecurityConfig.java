@@ -56,6 +56,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/tennis-fields/**").permitAll()
                     .requestMatchers("/api/coaches/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers("/api/payments/**").permitAll()
                     .anyRequest().authenticated();
             })
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -69,10 +70,7 @@ public class SecurityConfig {
         logger.info("Configuring CORS configuration");
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "https://tennis-book.onrender.com"
-        ));
+        configuration.setAllowedOrigins(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

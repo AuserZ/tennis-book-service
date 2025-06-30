@@ -27,13 +27,9 @@ public class PaymentController {
     private static final Logger logger = Logger.getLogger(PaymentController.class.getName());
 
     private final PaymentService paymentService;
-    private final PaymentRepository paymentRepository;
-    private final BookingRepository bookingRepository;
 
-    public PaymentController(PaymentService paymentService, PaymentRepository paymentRepository, BookingRepository bookingRepository) {
+    public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
-        this.paymentRepository = paymentRepository;
-        this.bookingRepository = bookingRepository;
     }
 
     @PostMapping("/new")
