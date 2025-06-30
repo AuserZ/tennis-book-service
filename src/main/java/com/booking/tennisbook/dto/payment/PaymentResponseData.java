@@ -15,6 +15,8 @@ public class PaymentResponseData {
     private OrderData order;
     @JsonProperty("payment")
     private PaymentData payment;
+    @JsonProperty("customer")
+    private CustomerDetails customer;
     @JsonProperty("additional_info")
     private AdditionalInfo additionalInfo;
     @JsonProperty("uuid")
