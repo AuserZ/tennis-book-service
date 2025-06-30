@@ -28,13 +28,13 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    @PostMapping("/booking")
-    public ResponseEntity<CreatePaymentResponse> createPayment(PaymentRequestBody requestBody) {
+    // @PostMapping("/booking")
+    // public ResponseEntity<CreatePaymentResponse> createPayment(PaymentRequestBody requestBody) {
 
-        CreatePaymentResponse payment = paymentService.createPayment(requestBody.getBookingId(),
-                requestBody.getPaymentMethodId());
-        return ResponseEntity.ok(payment);
-    }
+    //     CreatePaymentResponse payment = paymentService.createPayment(requestBody.getBookingId(),
+    //             requestBody.getPaymentMethodId());
+    //     return ResponseEntity.ok(payment);
+    // }
 
     @GetMapping("/{paymentId}")
     public ResponseEntity<Payment> getPayment(@PathVariable Long paymentId) {
