@@ -217,7 +217,7 @@ public class DataSeeder implements CommandLineRunner {
             session.setCurrentParticipants(0);
             session.setPricePerPerson(BigDecimal.valueOf(150000 + i * 50000));
             session.setDescription("Morning tennis session " + (i + 1));
-            session.setType("REGULAR");
+            session.setType("Public");
             session.setStatus(Session.SessionStatus.ACTIVE);
             sessionRepository.save(session);
         }
