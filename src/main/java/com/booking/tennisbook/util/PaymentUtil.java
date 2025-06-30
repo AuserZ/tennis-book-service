@@ -87,6 +87,9 @@ public class PaymentUtil {
         orderDoku.setAmount(booking.getTotalPrice().intValue());
         orderDoku.setInvoice_number(invoiceBuilder(booking));
         orderDoku.setCurrency("IDR");
+        orderDoku.setCallback_url(dokuCallbackUrl);
+        orderDoku.setCallback_url_cancel(dokuCallbackUrlCancel);
+        orderDoku.setCallback_url_result(dokuCallbackUrlResult);
         
         logger.info("[END] Order data built - Amount: {}, Invoice: {}, Currency: {}",
                 booking.getTotalPrice(), orderDoku.getInvoice_number(), orderDoku.getCurrency());
