@@ -37,18 +37,19 @@ public class PaymentServiceImpl implements PaymentService {
     private final BookingRepository bookingRepository;
     private final PaymentMethodRepository paymentMethodRepository;
     private final UserRepository userRepository;
-    private PaymentUtil paymentUtil;
+    private final PaymentUtil paymentUtil;
 
     @Autowired
     private final SessionService sessionService;
 
     public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,
-            SessionService sessionService, PaymentMethodRepository paymentMethodRepository, UserRepository userRepository) {
+            SessionService sessionService, PaymentMethodRepository paymentMethodRepository, UserRepository userRepository, PaymentUtil paymentUtil) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
         this.sessionService = sessionService;
         this.paymentMethodRepository = paymentMethodRepository;
         this.userRepository = userRepository;
+        this.paymentUtil = paymentUtil;
     }
 
     @Override
