@@ -20,6 +20,7 @@ import com.booking.tennisbook.model.PaymentMethod;
 import com.booking.tennisbook.model.User;
 import com.booking.tennisbook.repository.PaymentMethodRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import javax.crypto.Mac;
@@ -58,6 +59,7 @@ public class PaymentUtil {
         this.paymentMethodRepository = paymentMethodRepository;
         this.webClient = WebClient.builder().build();
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
     }
 
     public DokuPaymentRequest buildDokuRequest(Booking booking, User user){
