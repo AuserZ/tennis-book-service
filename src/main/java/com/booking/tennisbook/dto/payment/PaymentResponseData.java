@@ -1,5 +1,6 @@
 package com.booking.tennisbook.dto.payment;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,9 +11,14 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaymentResponseData {
+    @JsonProperty("order")
     private OrderData order;
+    @JsonProperty("payment")
     private PaymentData payment;
+    @JsonProperty("additional_info")
     private AdditionalInfo additionalInfo;
+    @JsonProperty("uuid")
     private Long uuid;
+    @JsonProperty("headers")
     private HeadersData headers;
 } 
