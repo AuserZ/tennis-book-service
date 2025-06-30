@@ -9,6 +9,8 @@ import com.booking.tennisbook.repository.PaymentMethodRepository;
 import com.booking.tennisbook.repository.SessionRepository;
 import com.booking.tennisbook.repository.CoachRepository;
 import com.booking.tennisbook.repository.TennisFieldRepository;
+import com.booking.tennisbook.model.User;
+import com.booking.tennisbook.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Component
 @Order(1) // Run first
@@ -37,6 +40,9 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private TennisFieldRepository tennisFieldRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @Override
     public void run(String... args) throws Exception {
         logger.info("Starting data seeder...");
@@ -55,6 +61,14 @@ public class DataSeeder implements CommandLineRunner {
             logger.info("Sessions seeded successfully!");
         } else {
             logger.info("Session data already exists, skipping seeder.");
+        }
+
+        // User data
+        if (userRepository.count() == 0) {
+            seedUser();
+            logger.info("User seeded successfully!");
+        } else {
+            logger.info("User data already exists, skipping seeder.");
         }
     }
 
@@ -221,5 +235,13 @@ public class DataSeeder implements CommandLineRunner {
             session.setStatus(Session.SessionStatus.ACTIVE);
             sessionRepository.save(session);
         }
+    }
+
+    private void seedUser() {
+        User user = new User();
+        user.setName("John Doe");
+        user.setEmail("john@example.com");
+        user.setPassword(new BCryptPasswordEncoder().encode("password123"));
+        userRepository.save(user);
     }
 } 

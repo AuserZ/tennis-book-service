@@ -18,7 +18,7 @@ public class PaymentResponseData {
     @JsonProperty("additional_info")
     private AdditionalInfo additionalInfo;
     @JsonProperty("uuid")
-    private Long uuid;
+    private String uuid;
     @JsonProperty("headers")
     private HeadersData headers;
 } 
