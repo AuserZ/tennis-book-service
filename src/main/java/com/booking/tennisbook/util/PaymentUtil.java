@@ -228,25 +228,25 @@ public class PaymentUtil {
             String signature = createCheckoutSignature(dokuClientId, requestId, timestamp, minifiedJson);
 
             String responseBody = webClient.post()
-                    .uri(dokuPaymentApi)
-                    .header("Client-Id", dokuClientId)
-                    .header("Request-Id", requestId)
-                    .header("Request-Timestamp", timestamp)
-                    .header("Signature", signature)
-                    .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                    .bodyValue(minifiedJson)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .onErrorResume(e -> {
-                        String errorBody = e.getMessage();
-                        logger.error("DOKU API error response: {}", errorBody);
-                        return Mono.just(errorBody);
-                    })
-                    .block();
+                .uri(dokuPaymentApi)
+                .header("Client-Id", dokuClientId)
+                .header("Request-Id", requestId)
+                .header("Request-Timestamp", timestamp)
+                .header("Signature", signature)
+                .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                .bodyValue(minifiedJson)
+                .retrieve()
+                .onStatus(status -> true, clientResponse ->
+                    clientResponse.bodyToMono(String.class).doOnNext(body ->
+                        logger.info("DOKU API response body: {}", body)
+                    ).then(Mono.empty())
+                )
+                .bodyToMono(String.class)
+                .block();
 
             long endTime = System.currentTimeMillis();
             logger.info("[END] DOKU Checkout payment processed in {}ms", (endTime - startTime));
-            logger.info("Response: {}", responseBody);
+            logger.info("Response from DOKU IS: {}", responseBody);
 
             // Try to parse as PaymentDokuResponse, otherwise print and throw
             try {
