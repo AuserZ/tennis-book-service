@@ -9,7 +9,6 @@ import com.booking.tennisbook.repository.PaymentMethodRepository;
 import com.booking.tennisbook.repository.SessionRepository;
 import com.booking.tennisbook.repository.CoachRepository;
 import com.booking.tennisbook.repository.TennisFieldRepository;
-import com.booking.tennisbook.model.User;
 import com.booking.tennisbook.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +19,6 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @Component
 @Order(1) // Run first
@@ -143,7 +141,7 @@ public class DataSeeder implements CommandLineRunner {
             TennisField f = new TennisField();
             f.setName("Central Court");
             f.setLocation("Jakarta");
-            f.setPhotoUrl("https://example.com/field.jpg");
+            f.setPhotoUrl("https://images.unsplash.com/photo-1566241121793-3e25f3586e43?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
             return tennisFieldRepository.save(f);
         });
         // Seed a few sessions
@@ -152,8 +150,8 @@ public class DataSeeder implements CommandLineRunner {
             session.setCoach(coach);
             session.setTennisField(field);
             session.setDate(LocalDate.now().plusDays(i));
-            session.setStartTime(LocalTime.of(8 + i, 0));
-            session.setEndTime(LocalTime.of(10 + i, 0));
+            session.setStartTime(LocalTime.of(8, 0)); // Always 08:00
+            session.setEndTime(LocalTime.of(10, 0));  // Always 10:00
             session.setMaxParticipants(4);
             session.setCurrentParticipants(0);
             session.setPricePerPerson(BigDecimal.valueOf(150000 + i * 50000));
