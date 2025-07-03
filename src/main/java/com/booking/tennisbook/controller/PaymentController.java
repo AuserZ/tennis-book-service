@@ -1,14 +1,9 @@
 package com.booking.tennisbook.controller;
 
-import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
 import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
 import com.booking.tennisbook.dto.payment.PaymentRequestBody;
 import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
-import com.booking.tennisbook.model.Booking;
-import com.booking.tennisbook.model.Payment;
-import com.booking.tennisbook.repository.BookingRepository;
-import com.booking.tennisbook.repository.PaymentRepository;
 import com.booking.tennisbook.service.PaymentService;
 
 import org.springframework.http.ResponseEntity;
@@ -16,8 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 

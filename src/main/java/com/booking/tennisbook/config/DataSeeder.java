@@ -65,7 +65,6 @@ public class DataSeeder implements CommandLineRunner {
 
         // User data
         if (userRepository.count() == 0) {
-            seedUser();
             logger.info("User seeded successfully!");
         } else {
             logger.info("User data already exists, skipping seeder.");
@@ -148,7 +147,7 @@ public class DataSeeder implements CommandLineRunner {
             return tennisFieldRepository.save(f);
         });
         // Seed a few sessions
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 30; i++) {
             Session session = new Session();
             session.setCoach(coach);
             session.setTennisField(field);
@@ -163,13 +162,5 @@ public class DataSeeder implements CommandLineRunner {
             session.setStatus(Session.SessionStatus.ACTIVE);
             sessionRepository.save(session);
         }
-    }
-
-    private void seedUser() {
-        User user = new User();
-        user.setName("John Doe");
-        user.setEmail("john@example.com");
-        user.setPassword(new BCryptPasswordEncoder().encode("password123"));
-        userRepository.save(user);
     }
 } 

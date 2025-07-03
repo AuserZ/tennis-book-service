@@ -1,14 +1,10 @@
 package com.booking.tennisbook.service.impl;
 
-import com.booking.tennisbook.dto.payment.CreatePaymentResponse;
 import com.booking.tennisbook.dto.payment.DokuPaymentRequest;
-import com.booking.tennisbook.dto.payment.OrderDoku;
 import com.booking.tennisbook.dto.payment.PaymentDokuResponse;
 import com.booking.tennisbook.exception.BusinessException;
 import com.booking.tennisbook.exception.ErrorCode;
 import com.booking.tennisbook.model.Booking;
-import com.booking.tennisbook.model.Payment;
-import com.booking.tennisbook.model.PaymentMethod;
 import com.booking.tennisbook.model.Session;
 import com.booking.tennisbook.model.User;
 import com.booking.tennisbook.model.DokuNotificationLog;
@@ -26,18 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
     Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
-    private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
-    private final PaymentMethodRepository paymentMethodRepository;
     private final UserRepository userRepository;
     private final PaymentUtil paymentUtil;
     private final DokuNotificationLogRepository dokuNotificationLogRepository;
@@ -45,156 +36,13 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     private final SessionService sessionService;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository, BookingRepository bookingRepository,
-            SessionService sessionService, PaymentMethodRepository paymentMethodRepository, UserRepository userRepository, PaymentUtil paymentUtil, DokuNotificationLogRepository dokuNotificationLogRepository) {
-        this.paymentRepository = paymentRepository;
+    public PaymentServiceImpl( BookingRepository bookingRepository,
+            SessionService sessionService, UserRepository userRepository, PaymentUtil paymentUtil, DokuNotificationLogRepository dokuNotificationLogRepository) {
         this.bookingRepository = bookingRepository;
         this.sessionService = sessionService;
-        this.paymentMethodRepository = paymentMethodRepository;
         this.userRepository = userRepository;
         this.paymentUtil = paymentUtil;
         this.dokuNotificationLogRepository = dokuNotificationLogRepository;
-    }
-
-    @Override
-    @Transactional
-    public CreatePaymentResponse createPayment(Long bookingId, String paymentMethodId) {
-        logger.info("[START] Creating payment for booking ID: {}, payment method: {}", bookingId, paymentMethodId);
-        
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> {
-                    logger.error("Booking not found with ID: {}", bookingId);
-                    return new BusinessException(ErrorCode.BOOKING_NOT_FOUND);
-                });
-        logger.debug("Found booking: ID={}, TotalPrice={}, Status={}", 
-                    booking.getId(), booking.getTotalPrice(), booking.getStatus());
-
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentMethodId)
-                .orElseThrow(() -> {
-                    logger.error("Payment method not found with ID: {}", paymentMethodId);
-                    return new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND);
-                });
-        logger.debug("Found payment method: ID={}, Name={}, Type={}", 
-                    paymentMethod.getId(), paymentMethod.getMethodName(), paymentMethod.getPaymentMethodType());
-
-        if (paymentRepository.existsByBookingIdAndStatus(bookingId, Payment.PaymentStatus.COMPLETED)) {
-            logger.error("Payment already exists for booking ID: {}", bookingId);
-            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_EXISTS);
-        }
-
-        logger.info("Creating new payment record");
-        Payment payment = new Payment();
-        payment.setBooking(booking);
-        payment.setAmount(booking.getTotalPrice());
-        payment.setPaymentMethod(paymentMethod);
-        payment.setStatus(Payment.PaymentStatus.PENDING);
-        payment.setTransactionId(UUID.randomUUID().toString());
-        payment.setCreatedAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-        logger.info("Payment record created with ID: {}, Transaction ID: {}", payment.getId(), payment.getTransactionId());
-
-        logger.info("Processing payment with ID: {}", payment.getId());
-        Payment processedPayment = processPayment(payment.getId(), booking);
-
-        if (processedPayment == null) {
-            logger.error("Payment processing failed for booking ID: {}", bookingId);
-            throw new BusinessException(ErrorCode.PAYMENT_FAILED);
-        }
-
-        logger.info("Building payment response");
-        CreatePaymentResponse processedPaymentResponse = new CreatePaymentResponse();
-
-        processedPaymentResponse.setPaymentId(processedPayment.getId());
-        processedPaymentResponse.setMessage(
-                processedPayment.getStatus() == Payment.PaymentStatus.COMPLETED ? "Payment processed successfully"
-                        : "Payment processing failed");
-        processedPaymentResponse.setStatus(String.valueOf(processedPayment.getStatus()));
-
-        logger.info("[END] Payment created successfully - Payment ID: {}, Status: {}, Message: {}", 
-                   processedPaymentResponse.getPaymentId(), processedPaymentResponse.getStatus(), 
-                   processedPaymentResponse.getMessage());
-
-        return processedPaymentResponse;
-    }
-
-    @Transactional
-    public Payment processPayment(Long paymentId, Booking booking) {
-        logger.info("[START] Processing payment with ID: {}", paymentId);
-        
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> {
-                    logger.error("Payment not found with ID: {}", paymentId);
-                    return new BusinessException(ErrorCode.PAYMENT_NOT_FOUND);
-                });
-
-        if (payment.getStatus() != Payment.PaymentStatus.PENDING) {
-            logger.error("Invalid payment status: {} for payment ID: {}", payment.getStatus(), paymentId);
-            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
-        }
-
-        logger.info("Updating session participants for session ID: {}", booking.getSession().getId());
-        // update session participants
-        Session session = sessionService.updateSessionParticipants(booking.getSession(), booking.getParticipants());
-        if (session == null) {
-            logger.error("Failed to update session participants for session ID: {}", booking.getSession().getId());
-            throw new BusinessException(ErrorCode.SESSION_NOT_ENOUGH);
-        }
-        logger.info("Session participants updated successfully - Current participants: {}", session.getCurrentParticipants());
-
-        logger.info("Simulating payment gateway integration");
-        payment.setStatus(Payment.PaymentStatus.COMPLETED);
-        payment.setProcessedAt(LocalDateTime.now());
-
-        // Update booking status
-        booking.setStatus(Booking.BookingStatus.CONFIRMED);
-        bookingRepository.save(booking);
-        logger.info("Booking status updated to CONFIRMED for booking ID: {}", booking.getId());
-
-        Payment savedPayment = paymentRepository.save(payment);
-        logger.info("[END] Payment processed successfully - Payment ID: {}, Status: {}, Processed at: {}", 
-                   savedPayment.getId(), savedPayment.getStatus(), savedPayment.getProcessedAt());
-
-        return savedPayment;
-    }
-
-    @Override
-    public Payment getPayment(Long paymentId) {
-        return paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
-    }
-
-    @Override
-    public List<Payment> getPaymentsByBooking(Long bookingId) {
-        return paymentRepository.findByBookingId(bookingId);
-    }
-
-    @Override
-    @Transactional
-    public Payment refundPayment(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
-
-        if (payment.getStatus() != Payment.PaymentStatus.COMPLETED) {
-            throw new BusinessException(ErrorCode.INVALID_PAYMENT_STATUS);
-        }
-
-        // Here you would integrate with a real payment gateway for refund
-        // For now, we'll just simulate a successful refund
-        payment.setStatus(Payment.PaymentStatus.REFUNDED);
-        payment.setRefundedAt(LocalDateTime.now());
-
-        // Update booking status
-        Booking booking = payment.getBooking();
-        booking.setStatus(Booking.BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-
-        return paymentRepository.save(payment);
-    }
-
-    @Override
-    public PaymentMethod getPaymentMethod(String paymentMethodId) {
-        return paymentMethodRepository.findById(paymentMethodId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_METHOD_NOT_FOUND));
     }
 
     @Override

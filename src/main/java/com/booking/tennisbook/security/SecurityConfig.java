@@ -42,7 +42,7 @@ public class SecurityConfig {
                 })
                 .csrf(csrf -> {
                     logger.info("Disabling CSRF protection");
-                    csrf.disable();
+                    csrf.ignoringRequestMatchers("/api/**");
                 })
                 .sessionManagement(session -> {
                     logger.info("Setting session management to STATELESS");
@@ -57,6 +57,7 @@ public class SecurityConfig {
                             .requestMatchers("/api/coaches/**").permitAll()
                             .requestMatchers("/actuator/**").permitAll()
                             .requestMatchers("/api/payments/**").permitAll()
+                            .requestMatchers("/","/error").permitAll()
                             .anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
