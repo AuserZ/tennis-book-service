@@ -73,7 +73,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000",
-                "https://tennis-book.onrender.com"));
+                "https://tennis-book.onrender.com",
+                "https://tennisbook.mz-akbar.online"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
