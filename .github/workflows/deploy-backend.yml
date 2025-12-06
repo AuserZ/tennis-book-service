@@ -26,15 +26,6 @@ jobs:
       - name: Build with Maven
         run: ./mvnw -B clean package -DskipTests
 
-      - name: Ensure target directory on server
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host:       ${{ secrets.SSH_HOST }}
-          username:   ${{ secrets.SSH_USER }}
-          key:        ${{ secrets.SSH_KEY }}
-          script: |
-            mkdir -p /home/mzakbar/apps/tennis-book-service/target
-
       - name: Copy JAR to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -56,10 +47,7 @@ jobs:
           key:        ${{ secrets.SSH_KEY }}
           script: |
             set -e
-            # move jar into place if needed (example)
             cd /home/mzakbar/apps/tennis-book-service
-            # optional: keep a backup
-            mv tennis-book-0.0.1-SNAPSHOT.jar tennis-book-0.0.1-SNAPSHOT.jar.bak || true
-            mv target/tennis-book-0.0.1-SNAPSHOT.jar tennis-book-0.0.1-SNAPSHOT.jar
-            sudo systemctl restart ${SERVICE_NAME}.service
-            sudo systemctl status  ${SERVICE_NAME}.service --no-pager
+            ls -l target/tennis-book-0.0.1-SNAPSHOT.jar
+            sudo systemctl restart ${{ secrets.SERVICE_NAME }}.service
+            sudo systemctl status  ${{ secrets.SERVICE_NAME }}.service --no-pager
